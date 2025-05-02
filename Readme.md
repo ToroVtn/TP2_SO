@@ -5,6 +5,7 @@ docker run -d -v ${PWD}:/root --security-opt seccomp:unconfined -ti --name arqui
 
 ## Compile and run
 ./compile.sh
+
 ./run.sh (-d)
 
 ## gdb cmds
