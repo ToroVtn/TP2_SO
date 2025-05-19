@@ -8,6 +8,7 @@
 #include <moduleLoader.h>
 #include <clock.h>
 #include <videoDriver.h>
+#include <memory.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -44,9 +45,13 @@ void * initializeKernelBinary()
 		sampleDataModule
 	};
 
-	loadModules(&endOfKernelBinary, moduleAddresses);
+	void* endOfModules = loadModules(&endOfKernelBinary, moduleAddresses);
 
 	clearBSS(&bss, &endOfKernel - &bss);
+
+	// This NEEDS to be run after clearBSS() because otherwise the uninitialized/zero/null initialized
+ 	// global/static variables in memory.c will get cleared as well.
+ 	memoryInit(endOfModules);
 
 	setBinaryClockFormat();
 
