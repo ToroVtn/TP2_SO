@@ -1,7 +1,7 @@
 ## Docker
-docker pull agodio/itba-so:1.0
+docker pull agodio/itba-so-multi-platform:3.0
 
-docker run -d -v ${PWD}:/root --security-opt seccomp:unconfined -ti --name arqui_builder agodio/itba-so:1.0
+docker run -d -v ${PWD}:/root --security-opt seccomp:unconfined -ti --name arqui_builder agodio/itba-so-multi-platform:3.0
 
 ## Compile and run
 ./compile.sh
