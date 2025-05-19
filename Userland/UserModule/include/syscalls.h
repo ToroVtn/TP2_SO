@@ -16,10 +16,11 @@ extern int sysWrite(int col, int row, char c);
 extern int sysWriteCharXY(int x, int y, char c, int fontSize);
 extern int sysWriteCharNext(char c);
 extern int sysMoveCursor(int col, int row);
-void sysPrintPixel(int x, int y, RGBColor color);
-void sysFillRectangle(int x, int y, int width, int height, RGBColor color);
+extern void sysPrintPixel(int x, int y, RGBColor color);
+extern void sysFillRectangle(int x, int y, int width, int height, RGBColor color);
 extern void sysPlaySound(uint32_t nFrequence, int ms);
 extern void sysGetCurrentTime(Time *currentTime);
 extern void sysGetRegisters(Register * registers);
+extern void* sysMalloc(uint64_t size);
 
 #endif

@@ -16,6 +16,7 @@ global sysFillRectangle
 global sysPlaySound
 global sysGetCurrentTime
 global sysGetRegisters
+global sysMalloc
 
 %macro syscall 1
   mov r9, %1
@@ -53,3 +54,5 @@ sysGetCurrentTime:
   syscall 13
 sysGetRegisters:
   syscall 14
+sysMalloc:
+  syscall 15

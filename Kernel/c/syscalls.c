@@ -7,6 +7,7 @@
 #include <pcSpeaker.h>
 #include <clock.h>
 #include <registers.h>
+#include <memory.h>
 
 /*
 * There should be stdin, stdout and stderr global variables and read/write syscalls that get/set them.
@@ -27,7 +28,8 @@ static SyscallFunction syscalls[] = {
   (SyscallFunction)fillRectangle,
   (SyscallFunction)playSoundForCertainMs,
   (SyscallFunction)getCurrentTime,
-  (SyscallFunction)getRegisters
+  (SyscallFunction)getRegisters,
+  (SyscallFunction)malloc,
 };
 
 SyscallFunction* getSyscallsArray() {
