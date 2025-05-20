@@ -5,4 +5,5 @@
 *.img
 *.qcow2
 *.vmdk
+.*history
 *.sys
