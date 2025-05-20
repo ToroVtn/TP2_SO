@@ -1,4 +1,12 @@
-GCC=gcc
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+  GCC = x86_64-elf-gcc
+else
+  GCC = gcc
+endif
+
+
 LD=ld
 AR=ar
 ASM=nasm
