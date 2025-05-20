@@ -1,7 +1,7 @@
 #!/bin/sh
 
 container='arqui_builder'
-docker='sudo docker'
+docker='docker'
 
 $docker start $container
 if [[ $? -ne 0 ]]; then
