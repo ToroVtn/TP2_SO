@@ -8,6 +8,7 @@
 #include <clock.h>
 #include <registers.h>
 #include <memory.h>
+#include <buddyMM.h>
 
 /*
 * There should be stdin, stdout and stderr global variables and read/write syscalls that get/set them.
@@ -30,6 +31,7 @@ static SyscallFunction syscalls[] = {
   (SyscallFunction)getCurrentTime,
   (SyscallFunction)getRegisters,
   (SyscallFunction)malloc,
+  (SyscallFunction)buddy_malloc,
 };
 
 SyscallFunction* getSyscallsArray() {

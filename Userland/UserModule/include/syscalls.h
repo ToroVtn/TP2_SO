@@ -5,6 +5,9 @@
 #include <keyboard.h>
 #include <sysinfo.h>
 
+//defined in buddyMM.h
+#define size_t uint64_t 
+
 extern void sysHalt();
 extern int sysGetTicks();
 extern void sysInfo(SystemInfo* si);
@@ -22,5 +25,6 @@ extern void sysPlaySound(uint32_t nFrequence, int ms);
 extern void sysGetCurrentTime(Time *currentTime);
 extern void sysGetRegisters(Register * registers);
 extern void* sysMalloc(uint64_t size);
+extern void* sysBuddyMalloc(size_t size);
 
 #endif
