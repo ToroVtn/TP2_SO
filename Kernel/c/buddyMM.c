@@ -178,6 +178,7 @@ void *buddy_malloc(size_t request) {
       list_push(&buckets[bucket], (list_t *)ptr_for_node(i + 1, bucket));
     }
 
+    *(size_t *)ptr = request;
     return ptr + HEADER_SIZE;
   }
 
