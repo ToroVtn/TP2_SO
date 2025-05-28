@@ -8,8 +8,7 @@
 #include <moduleLoader.h>
 #include <clock.h>
 #include <videoDriver.h>
-#include <memory.h>
-#include <buddyMM.h>
+#include <brk.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
