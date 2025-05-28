@@ -6,7 +6,7 @@ int testMM(){
     int * array = sysMalloc(sizeof(int) * 8);
     setSrand(getMs());
     for (int i=0; i<8; i++){
-        array[i] = rand();
+        array[i] = i+1;
     }
     for (int i=0; i<8; i++){
         printf("%d\n", array[i]);

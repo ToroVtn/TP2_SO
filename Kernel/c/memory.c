@@ -8,7 +8,7 @@ const int heapSize = (1 << 20) * 64;
 static void* heapStart;
 static void* heapCurrent;
 
-static const __uint64_t addressByteSize = sizeof(void*);
+static const uint64_t addressByteSize = sizeof(void*);
 /*
 heapStart alignment example:
 
@@ -32,11 +32,11 @@ heapStart = 0x503e8  v
 */
 
 void memoryInit(void * endOfModules) {
-    heapStart = (void*)(( (__uint64_t) endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
+    heapStart = (void*)(( (uint64_t) endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
     heapCurrent = heapStart; 
 }
 
-void* malloc(__uint64_t size) {
+void* malloc(uint64_t size) {
   if (heapCurrent + size - heapStart > heapSize) return NULL;
   void* heapRet = heapCurrent;
   heapCurrent += size;
