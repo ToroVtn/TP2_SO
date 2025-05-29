@@ -10,6 +10,8 @@
 
 #define BUCKET_COUNT (MAX_ALLOC_LOG2 - MIN_ALLOC_LOG2 + 1)
 
+#define HEAP_SIZE (1 << 20) * 64 //64 * 1MB heap
+
 typedef struct list_t {
   struct list_t *prev, *next;
 } list_t;
@@ -21,20 +23,11 @@ static size_t bucket_limit;
 static uint8_t node_is_split[(1 << (BUCKET_COUNT - 1)) / 8];
 
 static uint8_t *base_ptr;
-
-
-// 1MB = 1 << 20
 static uint8_t *max_ptr;
 
-static int update_max_ptr(uint8_t *new_value) {
-  if (new_value > max_ptr) {
-    if (brk(new_value)) {
-      return 0;
-    }
-    max_ptr = new_value;
-  }
-  return 1;
-}
+static uint8_t *heap_limit;
+
+static const uint64_t addressByteSize = sizeof(void*);
 
 static void list_init(list_t *list) {
   list->prev = list;
@@ -47,6 +40,25 @@ static void list_push(list_t *list, list_t *entry) {
   entry->next = list;
   prev->next = entry;
   list->prev = entry;
+}
+
+void buddy_init(void * endOfModules){  
+    base_ptr = max_ptr = (void*)(( (uint64_t) endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
+    heap_limit = base_ptr + HEAP_SIZE;
+    bucket_limit = BUCKET_COUNT - 1;
+    list_init(&buckets[BUCKET_COUNT - 1]);
+    list_push(&buckets[BUCKET_COUNT - 1], (list_t *)base_ptr);
+}
+
+
+static int update_max_ptr(uint8_t *new_value) {
+  if(max_ptr > new_value){
+    if(new_value > heap_limit){
+      return 0;
+    } 
+  max_ptr = new_value;
+  }
+  return 1;
 }
 
 static void list_remove(list_t *entry) {
@@ -125,14 +137,6 @@ void *buddy_malloc(size_t request) {
 
   if (request + HEADER_SIZE > MAX_ALLOC) {
     return NULL;
-  }
-
-  if (base_ptr == NULL) {
-    base_ptr = max_ptr = (uint8_t *)sbrk(0);
-    bucket_limit = BUCKET_COUNT - 1;
-    update_max_ptr(base_ptr + sizeof(list_t));
-    list_init(&buckets[BUCKET_COUNT - 1]);
-    list_push(&buckets[BUCKET_COUNT - 1], (list_t *)base_ptr);
   }
 
   bucket = bucket_for_request(request + HEADER_SIZE);
