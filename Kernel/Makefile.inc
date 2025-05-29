@@ -1,3 +1,5 @@
+UNAME_S := $(shell uname -s)
+
 LD=ld
 AR=ar
 ASM=nasm

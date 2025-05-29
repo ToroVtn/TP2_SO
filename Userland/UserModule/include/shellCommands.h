@@ -25,6 +25,7 @@ CommandResult commandSnake(int argc, char argv[argc][MAX_ARG_LEN]);
 CommandResult commandTest();
 CommandResult commandZeroDivisionError();
 CommandResult commandInvalidOpcodeError();
+CommandResult commandTestMM();
 
 
 #endif

@@ -40,6 +40,7 @@ int shell() {
   addCommand("snake", "Play snake.", commandSnake);
   addCommand("zeroDivisionError", "Test the zero division error", commandZeroDivisionError);
   addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
+  addCommand("testMM", "Test the memory manager", commandTestMM);
   commandHelp();
   newPrompt();
 
@@ -155,6 +156,12 @@ CommandResult parseCommand() {
   }
   puts(CommandResultStrings[TOO_MANY_ARGUMENTS]);
   return TOO_MANY_ARGUMENTS;
+}
+
+
+CommandResult commandTestMM(){
+  testMM();
+  return SUCCESS;
 }
 
 CommandResult commandEcho(int argc, char argv[argc][MAX_ARG_LEN]) {
