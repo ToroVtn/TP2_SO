@@ -33,6 +33,7 @@ static SyscallFunction syscalls[] = {
   (SyscallFunction)malloc,
   (SyscallFunction)createProcess,
   (SyscallFunction)exit,
+  (SyscallFunction)waitPid,
 };
 
 SyscallFunction* getSyscallsArray() {

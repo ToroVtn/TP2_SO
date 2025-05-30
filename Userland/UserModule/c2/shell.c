@@ -1,30 +1,33 @@
 /* sampleCodeModule.c */
 
-#include <colors.h>
-#include <draw.h>
-#include <utils.h>
-#include <shell.h>
-#include <shellCommands.h>
-#include <snake.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <sysinfo.h>
-#include <syscalls.h>
+#include "syscalls.h"
+#include "../include/utilities.h"
+
+extern uint8_t bss;
+
+
+int commandHistory[MAX_HISTORY_LEN];
+
+int historyNewIdx = 0;
+
+int historyCurrentIdx = 0;
+
+int historyCount = 0;
+
+int historyCurrentCount = 0;
+
+int currentCommandIdx = 0;
+
 
 int currentCommandIdx = 0;
 
 static int commandReturnCode = 0;
 
-void newPrompt();
-void incFont();
-void decFont();
-void addCommand(char* name, char* description, ShellFunction function);
-void setShellColor();
+
 CommandResult parseCommand();
 
 int shell() {
-  setShellColor();
+  setShellColor(0xC0CAF5, 0x1A1B26, 0xFFFF11);
   clearScreen();
 
   addCommand("help", "List all commands and their descriptions.", commandHelp);
@@ -41,7 +44,10 @@ int shell() {
   addCommand("zeroDivisionError", "Test the zero division error", commandZeroDivisionError);
   addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
   addCommand("testMM", "Test the memory manager", commandTestMM);
-  commandHelp();
+  
+  char* argv[1] = {"help"};
+  sysWaitPid(sysCreateProcess(1, argv, commandHelp));
+
   newPrompt();
 
   KeyStruct key;
@@ -119,14 +125,10 @@ ShellFunction getCommand(char* name) {
   return NULL;
 }
 
-CommandResult parseCommand() {
-  // Upto MAX_ARG_COUNT arguments (including the actual command)
-  // of MAX_COMMAND_LEN characters each (+1 for null termination).
-  char argv[MAX_ARG_COUNT][MAX_ARG_LEN];
+ExitCode parseCommand() {
+  char* argv[MAX_ARG_COUNT];
+  int argc = 0, len = 0;
   int i = currentCommandIdx;
-  int len = 0;
-  int argc = 0;
-  ShellFunction command;
   while (argc < MAX_ARG_COUNT) {
     if (screenBuffer[i] != ' ' && screenBuffer[i] != '\n' && len < MAX_ARG_LEN) {
       argv[argc][len++] = screenBuffer[i];
@@ -159,55 +161,55 @@ CommandResult parseCommand() {
 }
 
 
-CommandResult commandTestMM(){
+void commandTestMM(){
   testMM();
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandEcho(int argc, char argv[argc][MAX_ARG_LEN]) {
+void commandEcho(int argc, char argv[argc][MAX_ARG_LEN]) {
   // Starts at 1 because first arg is the command name
   for (int i = 1; i < argc; ++i) {
     printf("%s ", argv[i]);
   }
   printChar('\n');
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandGetReturnCode() {
+void commandGetReturnCode() {
   printf("%s - Code: %d\n", CommandResultStrings[commandReturnCode], commandReturnCode);
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandRealTime(){
+void commandRealTime(){
   Time currentTime;
   sysGetCurrentTime(&currentTime);
   printf("%s\n", currentTime.string);
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandHelp() {
+void commandHelp() {
   printString("Available commands:\n");
   for (int i = 0; i < commandCount; ++i) {
     printf("\t- %s: %s\n", commands[i].name, commands[i].description);
   }
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandGetKeyInfo() {
+void commandGetKeyInfo() {
   KeyStruct key;
   while (1) {
     sysHalt();
     if (getKey(&key) != EOF) {
-      if (justCtrlMod(&key) && key.character == 'c') return SUCCESS;
+      if (justCtrlMod(&key) && key.character == 'c') sysExit(SUCCESS);;
       else {
         printKey(&key);
       }
     }
   }
-  return SUCCESS;
+  sysExit(SUCCESS);
 }
 
-CommandResult commandRand(int argc, char argv[argc][MAX_ARG_LEN]) {
+void commandRand(int argc, char argv[argc][MAX_ARG_LEN]) {
   static bool randInitialized = false;
   if (!randInitialized) {
     setSrand(sysGetTicks());
@@ -217,26 +219,26 @@ CommandResult commandRand(int argc, char argv[argc][MAX_ARG_LEN]) {
     puts("Usage:");
     printf("\t\t%s <min> <max> [count]\n", argv[0]);
     printf("Where all arguments are integers and count is optional.\n");
-    return MISSING_ARGUMENTS;
+    sysExit(MISSING_ARGUMENTS);;
   }
   int min = strToInt(argv[1]);
   int max = strToInt(argv[2]);
   if (max < min) {
     puts("Error: min can't be greater than max");
-    return ILLEGAL_ARGUMENT;
+    sysExit(ILLEGAL_ARGUMENT);;
   }
   int count = (argc > 3) ? strToInt(argv[3]) : 1;
   while (count--) {
     printf("%d%s", randBetween(min, max), (count == 0) ? "" : ", ");
   }
   printf("\n");
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 
-CommandResult commandLayout(int argc, char (*argv)[MAX_ARG_LEN]) {
+void commandLayout(int argc, char (*argv)[MAX_ARG_LEN]) {
   if (argc == 1) {
     printf("Current layout: %s - %d\n", LayoutStrings[systemInfo.layout], systemInfo.layout);
-    return SUCCESS;
+    sysExit(SUCCESS);;
   }
   if (strcmp(argv[1], "--help") == 0) {
     printf("Usage\n");
@@ -254,20 +256,20 @@ CommandResult commandLayout(int argc, char (*argv)[MAX_ARG_LEN]) {
     int code = strToInt(argv[1]);
     if (code != QWERTY_LATAM && code != QWERTY_US) {
       printf("Layout not available: %s\n", argv[1]);
-      return ILLEGAL_ARGUMENT;
+      sysExit(ILLEGAL_ARGUMENT);;
     }
     setLayout(code);
     printf("Layout set to %s\n", LayoutStrings[code]);
   }
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 
-CommandResult commandSetColors(int argc, char (*argv)[MAX_ARG_LEN]) {
+void commandSetColors(int argc, char (*argv)[MAX_ARG_LEN]) {
   if (argc < 4) {
     puts("Usage:");
     printf("\t\t%s <fontColor> <backgroundColor> <cursorColor>\n", argv[0]);
     printf("Where all arguments should be hex colors.\n");
-    return MISSING_ARGUMENTS;
+    sysExit(MISSING_ARGUMENTS);;
   }
   int fontColor = strToInt(argv[1]);
   int bgColor = strToInt(argv[2]);
@@ -276,10 +278,10 @@ CommandResult commandSetColors(int argc, char (*argv)[MAX_ARG_LEN]) {
   setBgColor(bgColor);
   setCursorColor(cursorColor);
   repaint();
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 
-CommandResult commandSysInfo() {
+void commandSysInfo() {
   printf("screenWidth: %d\n", systemInfo.screenWidth);
   printf("screenHeight: %d\n", systemInfo.screenHeight);
   printf("charWidth: %d\n", systemInfo.charWidth);
@@ -289,10 +291,10 @@ CommandResult commandSysInfo() {
   printf("charSeparation: %d\n", systemInfo.charSeparation);
   printf("fontCols: %d\n", systemInfo.fontCols);
   printf("fontRows: %d\n", systemInfo.fontRows);
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 
-CommandResult commandGetRegisters(int argc, char argv[argc][MAX_ARG_LEN]) {
+void commandGetRegisters(int argc, char argv[argc][MAX_ARG_LEN]) {
   if (argc >= 2 && strcmp(argv[1], "--help") == 0) {
     puts("Usage:");
     printf("\t\t%s\n", argv[0]);
@@ -301,7 +303,7 @@ CommandResult commandGetRegisters(int argc, char argv[argc][MAX_ARG_LEN]) {
       "and by running this command without this flag it will print the saved "
       "values of the registers.\n"
     );
-    return SUCCESS;
+    sysExit(SUCCESS);;
   }
   Register * registers;
   sysGetRegisters(registers);
@@ -312,10 +314,10 @@ CommandResult commandGetRegisters(int argc, char argv[argc][MAX_ARG_LEN]) {
   }
   printf("\n");
   printf("For more info add --help to the command\n");
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 
-CommandResult commandSnake(int argc, char argv[argc][MAX_ARG_LEN]) {
+void commandSnake(int argc, char argv[argc][MAX_ARG_LEN]) {
   if (argc < 3) {
     puts("Usage:");
     printf("\t\t%s <playerCount> <player1Name> [player2Name]\n", argv[0]);
@@ -324,20 +326,20 @@ CommandResult commandSnake(int argc, char argv[argc][MAX_ARG_LEN]) {
     printf(" ctrl + r: reset game\n");
     printf(" ctrl + x: lose game\n");
     printf(" ctrl + c: exit game\n");
-    return MISSING_ARGUMENTS;
+    sysExit(MISSING_ARGUMENTS);;
   }
   int playerCount = strToInt(argv[1]);
   if (playerCount != 1 && playerCount != 2) {
     printf("Invalid player count: %s\n", argv[1]);
-    return ILLEGAL_ARGUMENT;
+    sysExit(ILLEGAL_ARGUMENT);;
   } else if (playerCount == 2 && argc < 4) {
     printf("Player 2 name missing\n");
-    return MISSING_ARGUMENTS;
+    sysExit(SUCCESS);;
   }
   snake(playerCount > 1, argv[2], argv[3]);
   setShellColor();
   repaint();
-  return SUCCESS;
+  sysExit(SUCCESS);;
 }
 CommandResult commandZeroDivisionError(){
   int i = 4/0;

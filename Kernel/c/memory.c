@@ -1,10 +1,12 @@
 #include <memory.h>
 #include <stdio.h>
+#include <stdint.h>
 
 // extern uint8_t endOfBinary;
 
 // 64MB max heap size
 const int heapSize = (1 << 20) * 64;
+const int stackSize = (1 << 20) * 4; // 4MB stack size
 static void* heapStart;
 static void* heapCurrent;
 
@@ -43,9 +45,8 @@ void* malloc(uint64_t size) {
   return heapRet;
 }
 
-void* allocateStack(uint64_t size) {
-  void* rsp = malloc(size);
-  rsp += size - 1;
-  rsp = (void*)((uint64_t)rsp & ~(addressByteSize - 1)); // Align to addressByteSize
-  return rsp;
+void allocateStack(void** stackBase, void** stackTop) {
+  *stackTop = malloc(stackSize);
+  *stackBase = *stackTop + stackSize - 1;
+  *stackBase = (void*)(((uint64_t)*stackBase - addressByteSize) & ~(addressByteSize - 1));
 }

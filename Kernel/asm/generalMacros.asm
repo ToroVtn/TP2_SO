@@ -132,15 +132,6 @@
     iretq
 %endmacro
 
-%macro irqHandler 1
-  push rax
-  mov rdi, %1
-  call irqDispatcher
-  mov al, 0x20
-  out 0x20, al
-  pop rax
-  iretq
-%endmacro
 
 %macro exceptionHandler 1
   pushState

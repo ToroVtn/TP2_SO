@@ -1,10 +1,12 @@
-%include "asm/include/generalMacros.asm"
+%include "asm/generalMacros.asm"
 
 section .text
 
 global disableInterruptions
 global enableInterruptions
 global haltTillNextInterruption
+global switcher
+global switcherInterruption
 	
 global picMask
 
@@ -17,37 +19,49 @@ global irq05Handler
 global irq06Handler
 global irq07Handler
 
-global exception00Handler
-global exception01Handler
+global timerTickIrqHandler
+global KBIrqHandler
 
 extern irqDispatcher
 extern readKeyCode
 extern saveRegisters
 extern exceptionDispatcher
 extern getStackBase
+extern schedule
+
+switcherInterruption:
+  int 0x22
+  ret
+
+switcher:
+  pushAllRegs
+  mov rdi, rsp
+  call schedule
+  mov rsp, rax
+  popAllRegs
+  EOI
+  iretq
 
 KBIrqHandler:
   push rax
   call readKeyCode
   cmp al, 0x3b
   jne .next
-  pop rax
+  add rsp, 8
   pushState
   push qword normalRegistersCode
   call saveRegisters
   pop rax
   popState
-  jmp .prematureExit
+  EOI
+  iretq
 
 .next:
   cmp al, 0x3c 
   pop rax
   jne .regularKP
-  mov rdi, rsp
-  call schedule
-  mov rsp, rax
-  popAllRegs
-  .prematureExit
+.f2:
+  int 0x22 ; switcherInterruption  
     EOI
     iretq
 .regularKP:

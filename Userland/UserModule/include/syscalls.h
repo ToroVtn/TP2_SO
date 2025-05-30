@@ -22,5 +22,9 @@ extern void sysPlaySound(uint32_t nFrequence, int ms);
 extern void sysGetCurrentTime(Time *currentTime);
 extern void sysGetRegisters(Register * registers);
 extern void* sysMalloc(uint64_t size);
+extern void sysFree(void* ptr);
+extern uint32_t sysCreateProcess(int argc, char* argv[], void* rip);
+extern void sysExit(int code);
+extern int sysWaitPid(uint32_t pid);
 
 #endif

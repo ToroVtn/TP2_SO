@@ -17,6 +17,7 @@ extern uint8_t data;
 extern uint8_t bss;
 extern uint8_t endOfKernelBinary;
 extern uint8_t endOfKernel;
+extern void* userModInit();
 
 static const uint64_t PageSize = 0x1000;
 
@@ -63,8 +64,10 @@ int main()
 {	
 	loadIdt();
 	setFontGridValues();
+	userModInit();
 
-	userModule();
+	//while (1) haltTillNextInterruption();
+	//userModule();
 
 	return 0;
 }

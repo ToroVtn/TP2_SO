@@ -1,7 +1,7 @@
 section .text
 
 extern getSyscallsArray
-
+global syscallDispatcher
 
 
 ; -------------------------     FUNCTION     ----------------------------
@@ -42,6 +42,7 @@ global sysGetRegisters
 global sysMalloc
 global sysCreateProcess,
 global sysExit,
+global sysWaitPid,
 
 %macro syscall 1
   mov r9, %1
@@ -85,5 +86,7 @@ sysCreateProcess:
   syscall 16
 sysExit:
   syscall 17
-syscallDispatcher:
+sysWaitPid:
   syscall 18
+;syscallDispatcher:
+ ; syscall 18

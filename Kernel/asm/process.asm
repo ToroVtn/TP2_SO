@@ -1,12 +1,13 @@
 
-%include "asm/include/generalMacros.asm"
+%include "asm/generalMacros.asm"
 
 global createStack
 global idleProcess
 global exit
 
 extern allocateStack
-extern processExit
+extern exitProcess
+extern userModProcessInit
 
 section .text
 
@@ -15,6 +16,7 @@ section .text
 ; rdi: argc (number of arguments)
 ; rsi: argv (array of argument strings)
 ; rdx: process function pointer
+; rcx: pointer to stack base
 ; Returns: pointer to the new process stack
 createStack:
     ; This is just so gdb detects this function for the call stack.
@@ -26,27 +28,13 @@ createStack:
     mov r11, rsp
 
     ; Preserve registers that may be modified by stackAlloc
-    push rdi    ; argc
-    push rsi    ; argv
-    push rdx    ; process function pointer
+    mov rsp, rcx
+    mov rbp, rcx
+    
 
-    ; Allocate new stack
-    mov rdi, [processStackSize]
-    call allocateStack
-
-    ; Restore preserved registers
-    pop rdx     ; process function pointer
-    pop rsi     ; argv
-    pop rdi     ; argc
-
-    ; Set up new process stack
-    mov rsp, rax
-    mov rbp, rax
-
-    ; Set up stack frame for new process
-    push 0      ; Align
+    ; Set up stack frame for new process   
     push 0      ; ss
-    push rax    ; original rsp
+    push rcx    ; original rsp
     push 0x202  ; rflags
     push 0x8    ; cs
     push rdx    ; rip (process function pointer)
@@ -65,8 +53,18 @@ createStack:
 ; -----------------------------------------------------------------------
 
 ; -------------------------     ROUTINE     ----------------------------
-; Description: A process created at kernel initialization and which is always ready
-; Arguments: None
+; Parameters; nonde
+; Returns: None
+userModInit:
+    call userModProcessInit
+    mov rsp, rax
+    popAllRegs
+    EOI
+    iretq
+
+; -------------------------     ROUTINE     ----------------------------
+; Desc: A process created at kernel initialization and which is always ready
+; Parameters: None
 ; Return: None
 
 idleProcess:
@@ -75,15 +73,13 @@ idleProcess:
 ; -----------------------------------------------------------------------
 
 ; -------------------------     ROUTINE     ----------------------------
-; Description: Exit from process. Process stack and pcb will get cleared.
+; Desc: Exit from process. Process stack and pcb will get cleared.
 ;              Then call timer tick interruption.
-; Arguments
+; Parameters:
 ;  rdi: exit code (not currently used)
 ; Return: doesn't return
 processExit:
     call exitProcess
-    int 0x20
+    int 0x22
 ; -----------------------------------------------------------------------
 
-section .rodata
-    processStackSize dq 0x1000 
