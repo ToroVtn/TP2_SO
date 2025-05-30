@@ -1,4 +1,5 @@
 #include "../include/scheduler.h"
+#include <stddef.h>
 
 extern void* createStack(int argc, char* argv[], void* rip);
 extern void* idleProcess();
@@ -108,16 +109,16 @@ void* schedule(void* rsp) {
   }
 }
 
-uint32_t createProcess(int argc, char* argv[], void* processRip) {uint32_t createProcess(int argc, char* argv[], void* processRip) {
-  void* rsp = createProcessStack(argc, argv, processRip);  void* rsp = createProcessStack(argc, argv, processRip);
+uint32_t createProcess(int argc, char* argv[], void* processRip) {
+  void* rsp = createProcessStack(argc, argv, processRip); 
   return addPCB(rsp);
 }
 
 void exitProcess(int exitCode) {
   
 
-  for (int i = 0; i < pcbList.current->wfmLen; ++i) {
-    PCB* pcb = pcbList.current->waitingForMe[i];
+  for (int i = 0; i < pcbList.current->waitingCount; ++i) {
+    ProcessControlBlock* pcb = pcbList.current->waitingProcesses[i];
     pcb->state = READY;
   }
 
@@ -130,11 +131,11 @@ void exitProcess(int exitCode) {
     
     // This should never happen and should be removed after testing...
     // I'm using it so I get an exception in case this isn't working as it should.
-    if (pcbList.prev == NULL) 1 / 0;
+    //if (pcbList.previous == NULL) 1 / 0;
 
-    pcbList.prev->next = pcbList.current->next;
+    pcbList.previous->next = pcbList.current->next;
     freePCBNode(pcbList.current);
-    pcbList.current = pcbList.prev->next;
+    pcbList.current = pcbList.previous->next;
   }
 }
 
@@ -144,7 +145,7 @@ void waitPid(uint32_t pid) {
   // pid is always increasing..
   while (node != NULL && node->pcb->pid <= pid) {
     if (node->pcb->pid == pid) {
-      node->waitingProcesess[node->waitingCount+] = pcbList.current->pcb;
+      node->waitingProcesses[node->waitingCount++] = pcbList.current->pcb;
       pcbList.current->pcb->state = BLOCKED;
       return;
     }
