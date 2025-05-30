@@ -42,3 +42,10 @@ void* malloc(uint64_t size) {
   heapCurrent += size;
   return heapRet;
 }
+
+void* allocateStack(uint64_t size) {
+  void* rsp = malloc(size);
+  rsp += size - 1;
+  rsp = (void*)((uint64_t)rsp & ~(addressByteSize - 1)); // Align to addressByteSize
+  return rsp;
+}

@@ -9,6 +9,7 @@
 #include <clock.h>
 #include <videoDriver.h>
 #include <memory.h>
+#include <scheduler.h>
 
 extern uint8_t text;
 extern uint8_t rodata;

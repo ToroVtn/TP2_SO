@@ -9,7 +9,7 @@ typedef struct {
     uint32_t pid;                // Process ID
     uint8_t priority;           // Process priority      
     ProcessState state;          // Current state of the process
-    void *stackPointer;      // Pointer to the process's stack
+    void* rsp;      // Pointer to the process's stack
 } ProcessControlBlock;
 
 void initPCBlist();
