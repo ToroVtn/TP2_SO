@@ -98,7 +98,7 @@
 %endmacro
 
 ; End of Interrupt macro
-%macro EOI 0
+%macro eoi 0
     mov al, 0x20
     out 0x20, al
 %endmacro

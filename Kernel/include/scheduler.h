@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-typedef enum { READY, RUNNING, BLOCKED, TERMINATED } ProcessState;
+typedef enum { READY, BLOCKED, TERMINATED } ProcessState;
 
-typedef struct {
+typedef struct ProcessControlBlock {
     uint32_t pid;                // Process ID
     uint8_t priority;           // Process priority      
     ProcessState state;          // Current state of the process
@@ -14,14 +14,13 @@ typedef struct {
     char* name;
     int code;
     int waitedCode; // Code that the process waited for
-
 } ProcessControlBlock;
 
 void initPCBlist();
-uint32_t createProcess(int argc, char* argv[], void* rip);
+uint32_t createProcess(int argc, char* argv[], void* processRip);
 void* schedule(void* rsp);
 void exitSwitcher();
-extern void exit(int code);
+void exit(int code);
 int waitPid(uint32_t pid);
 //void startFirstProcess(void* processAddress);
 #endif

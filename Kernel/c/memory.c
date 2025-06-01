@@ -50,3 +50,8 @@ void allocateStack(void** stackBase, void** stackTop) {
   *stackBase = *stackTop + stackSize - 1;
   *stackBase = (void*)(((uint64_t)*stackBase - addressByteSize) & ~(addressByteSize - 1));
 }
+
+
+void free(void* ptr) {
+  return;
+}

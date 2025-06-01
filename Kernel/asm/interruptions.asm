@@ -1,26 +1,20 @@
 %include "asm/generalMacros.asm"
 
-section .text
 
 global disableInterruptions
 global enableInterruptions
 global haltTillNextInterruption
+
 global switcher
 global switcherInterruption
 	
 global picMask
 
-global irq00Handler
-global irq01Handler
-global irq02Handler
-global irq03Handler
-global irq04Handler
-global irq05Handler
-global irq06Handler
-global irq07Handler
 
 global timerTickIrqHandler
 global KBIrqHandler
+global exception00Handler
+global exception01Handler
 
 extern irqDispatcher
 extern readKeyCode
@@ -28,6 +22,12 @@ extern saveRegisters
 extern exceptionDispatcher
 extern getStackBase
 extern schedule
+
+
+section .text
+
+timerTickIrqHandler:
+  irqHandler 0
 
 switcherInterruption:
   int 0x22
@@ -39,7 +39,7 @@ switcher:
   call schedule
   mov rsp, rax
   popAllRegs
-  EOI
+  
   iretq
 
 KBIrqHandler:
@@ -51,50 +51,22 @@ KBIrqHandler:
   pushState
   push qword normalRegistersCode
   call saveRegisters
-  pop rax
+  add rsp,8
   popState
-  EOI
+  
   iretq
 
 .next:
   cmp al, 0x3c 
   pop rax
   jne .regularKP
+
 .f2:
   int 0x22 ; switcherInterruption  
-    EOI
-    iretq
+  iretq
+
 .regularKP:
   irqHandler 1
-
-;irq00Handler:
-;  irqHandler 0
-;irq01Handler:
-;  push rax
-;  call readKeyCode
-;  cmp al, 0x3b ; f1 para sacar captura de los registros
-;  pop rax
-;  jne .skip
-;  pushState
-;  push qword normalRegistersCode
-;  call saveRegisters
-;  pop rax
-;  popState
-;.skip:
-;  irqHandler 1
-;irq02Handler:
-;  irqHandler 2
-;irq03Handler:
-;  irqHandler 3
-;irq04Handler:
-;  irqHandler 4
-;irq05Handler:
-;  irqHandler 5
-;irq06Handler:
-;  irqHandler 6
-;irq07Handler:
-;  irqHandler 7
-
 
 
 exception00Handler:

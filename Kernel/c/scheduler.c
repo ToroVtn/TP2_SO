@@ -1,6 +1,7 @@
 #include "../include/scheduler.h"
 #include <stddef.h>
 #include <memory.h>
+#include <stdlib.h>
 
 extern void* createStack(int argc, char* argv[], void* rip, void* stackBase);
 extern void* idleProcess();

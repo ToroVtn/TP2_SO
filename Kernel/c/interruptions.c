@@ -29,7 +29,7 @@ void loadIdt() {
 }
 
 static InterruptionFunction interruptions[255] = {
-  timerTick,
+  incTicks,
   readKeyToBuffer,
 };
 

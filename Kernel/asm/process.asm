@@ -1,13 +1,15 @@
 
 %include "asm/generalMacros.asm"
 
-global createStack
+global createStack 
 global idleProcess
 global exit
+global startUserModule
 
 extern allocateStack
 extern exitProcess
 extern userModProcessInit
+extern switcherInterruption
 
 section .text
 
@@ -18,6 +20,7 @@ section .text
 ; rdx: process function pointer
 ; rcx: pointer to stack base
 ; Returns: pointer to the new process stack
+
 createStack:
     ; This is just so gdb detects this function for the call stack.
     push rbp       ; stackframe
@@ -50,16 +53,17 @@ createStack:
     pop r11
     pop rbp
     ret
+
 ; -----------------------------------------------------------------------
 
 ; -------------------------     ROUTINE     ----------------------------
 ; Parameters; nonde
 ; Returns: None
-userModInit:
+starteUserModule:
     call userModProcessInit
     mov rsp, rax
     popAllRegs
-    EOI
+    eoi
     iretq
 
 ; -------------------------     ROUTINE     ----------------------------
