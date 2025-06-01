@@ -31,7 +31,9 @@ static SyscallFunction syscalls[] = {
   (SyscallFunction)getCurrentTime,
   (SyscallFunction)getRegisters,
   (SyscallFunction)malloc,
-  (SyscallFunction)free,
+  (SyscallFunction)createProcess,
+  (SyscallFunction)exit,
+  (SyscallFunction)waitPid,
 };
 
 SyscallFunction* getSyscallsArray() {
