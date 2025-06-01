@@ -1,7 +1,6 @@
-
+/* sampleCodeModule.c */
 
 #include <shell.h>
-#include <stdlib.h>
 #include <syscalls.h>
 #include <sysinfo.h>
 
@@ -9,8 +8,6 @@
 
 int main() {
   getSysInfo();
-
-  // shell();
 
   while (true) {
     char* argv[] = {"shell", "test arg 1", "test arg 2"};

@@ -1,23 +1,18 @@
-#include <asciiBitFields.h>
-#include <keyboard.h>
-#include <timer.h>
-#include <interruptions.h>
-#include <stdint.h>
-#include <string.h>
-#include <lib.h>
-#include <moduleLoader.h>
 #include <clock.h>
-#include <videoDriver.h>
+#include <interruptions.h>
+#include <lib.h>
 #include <memory.h>
+#include <moduleLoader.h>
+#include <stdint.h>
+#include <videoDriver.h>
 #include <scheduler.h>
 
-// extern uint8_t text;
-// extern uint8_t rodata;
-// extern uint8_t data;
-extern uint8_t bss;
+// extern uint8_t kernelText;
+// extern uint8_t kernelRodata;
+// extern uint8_t kernelData;
+extern uint8_t kernelBss;
 extern uint8_t endOfKernelBinary;
 extern uint8_t endOfKernel;
-extern void* userModInit();
 
 static const uint64_t PageSize = 0x1000;
 
@@ -26,54 +21,45 @@ typedef int (*EntryPoint)();
 EntryPoint const userModule = (EntryPoint)0x400000;
 static EntryPoint const sampleDataModule = (EntryPoint)0x500000;
 
-void startUserModule() {
-    userModule();
+extern void startUserModule();
+
+void clearBSS(void* bssAddress, uint64_t bssSize) {
+  memset(bssAddress, 0, bssSize);
 }
 
-void clearBSS(void * bssAddress, uint64_t bssSize)
-{
-	memset(bssAddress, 0, bssSize);
+void* getStackBase() {
+  // PageSize * 8 = The size of the stack itself, 32KiB
+  // Subtract sizeof(uint64_t) to begin at the top of the stack.
+  return (void*)((uint64_t)&endOfKernel + PageSize * 8 - sizeof(uint64_t));
 }
 
-void * getStackBase()
-{
-	return (void*)(
-		(uint64_t)&endOfKernel
-		+ PageSize * 8				//The size of the stack itself, 32KiB
-		- sizeof(uint64_t)			//Begin at the top of the stack
-	);
+void* initializeKernelBinary() {
+  void* moduleAddresses[] = {userModule, sampleDataModule};
+
+  void* endOfModules = loadModules(&endOfKernelBinary, moduleAddresses);
+
+  clearBSS(&kernelBss, &endOfKernel - &kernelBss);
+
+  // This NEEDS to be run after clearBSS() because otherwise the uninitialized/zero/null initialized
+  // global/static variables in memory.c will get cleared as well.
+  memoryInit(endOfModules);
+
+  setBinaryClockFormat();
+
+  return getStackBase();
 }
 
-void * initializeKernelBinary()
-{
-	void * moduleAddresses[] = {
-		userModule,
-		sampleDataModule
-	};
+int main() {
+  loadIdt();
+  setFontGridValues();
+  initializePCBList();
 
-	void* endOfModules = loadModules(&endOfKernelBinary, moduleAddresses);
+  // userModule();
+  startUserModule();
 
-	clearBSS(&bss, &endOfKernel - &bss);
+  // This should only run until the shell process begins, afterwards I don't
+  // think this code will ever be reached again.
+  // while (1) haltTillNextInterruption();
 
-	// This NEEDS to be run after clearBSS() because otherwise the uninitialized/zero/null initialized
- 	// global/static variables in memory.c will get cleared as well.
- 	memoryInit(endOfModules);
-
-	setBinaryClockFormat();
-
-	return getStackBase();
-}
-
-int main()
-{	
-	loadIdt();
-	setFontGridValues();
-	userModProcessInit();
-
-	//while (1) haltTillNextInterruption();
-	// userModule();
-
-	startUserModule();
-
-	return 0;
+  return 0;
 }

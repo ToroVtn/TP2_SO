@@ -1,8 +1,8 @@
 #include <draw.h>
 #include <shell.h>
 #include <stdarg.h>
-#include <syscalls.h>
 #include <stdlib.h>
+#include <syscalls.h>
 #include <sysinfo.h>
 
 int getKey(KeyStruct* key) {
@@ -40,7 +40,8 @@ void jumpLine() {
   int i = screenBufReadIdx;
   int length = 0;
   while (/* i != screenBufWriteIdx --> this should always be the case &&  */
-    screenBuffer[i] != '\n' && length < systemInfo.fontCols) {
+         screenBuffer[i] != '\n' && length < systemInfo.fontCols
+  ) {
     i = (i + 1) % SCREEN_BUFFER_SIZE;
     ++length;
   }
@@ -51,8 +52,8 @@ void jumpLine() {
 
 void printScreenBuffer() {
   for (int i = screenBufReadIdx; i != screenBufWriteIdx; i = (i + 1) % SCREEN_BUFFER_SIZE) {
-    int endOfScreen = sysWriteCharNext(screenBuffer[i]);
-    if (endOfScreen) jumpLine();
+    /* int endOfScreen = */ sysWriteCharNext(screenBuffer[i]);
+    // if (endOfScreen) jumpLine();
   }
 }
 
@@ -108,32 +109,32 @@ unsigned int strlen(char* s) {
 }
 
 uint32_t uintToBase(unsigned long value, char* buffer, uint32_t base) {
-	char* p = buffer;
-	char* p1 = buffer;
+  char* p = buffer;
+  char* p1 = buffer;
   char* p2;
-	uint32_t digits = 0;
+  uint32_t digits = 0;
 
-	do {
-		uint32_t remainder = value % base;
-		*p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
-		digits++;
-	} while (value /= base);
+  do {
+    uint32_t remainder = value % base;
+    *p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
+    digits++;
+  } while (value /= base);
 
-	*p = 0;
+  *p = 0;
 
-	p2 = p - 1;
-	while (p1 < p2) {
-		char tmp = *p1;
-		*p1 = *p2;
-		*p2 = tmp;
-		p1++;
-		p2--;
-	}
+  p2 = p - 1;
+  while (p1 < p2) {
+    char tmp = *p1;
+    *p1 = *p2;
+    *p2 = tmp;
+    p1++;
+    p2--;
+  }
 
-	return digits;
+  return digits;
 }
 uint32_t intToBase(long value, char* buffer, uint32_t base) {
-	char* p = buffer;
+  char* p = buffer;
   if (value < 0) {
     *p++ = '-';
     value = -value;
@@ -151,58 +152,126 @@ void printUintAsBase(unsigned long n, int base) {
   printString(buf);
 }
 
+static char paddingChar;
+static int paddingLen = 0;
+void printPadding() {
+  for (int i = 0; i < paddingLen; ++i) {
+    printChar(paddingChar);
+  }
+  paddingLen = 0;
+}
+void printAsBaseWithPadding(long n, int base) {
+  char buf[255];
+  int digits = intToBase(n, buf, base);
+  paddingLen = paddingLen - digits;
+  char* s = buf;
+  if (n < 0) {
+    printChar('-');
+    ++s;
+    --paddingLen;
+  }
+  printPadding();
+  printString(s);
+}
+void printUintAsBaseWithPadding(long n, int base) {
+  char buf[255];
+  int digits = uintToBase(n, buf, base);
+  paddingLen = paddingLen - digits;
+  char* s = buf;
+  printPadding();
+  printString(s);
+}
+void printStringWithPadding(const char* s) {
+  for (int i = 0; s[i] != 0 && paddingLen > 0; ++i) {
+    --paddingLen;
+  }
+  printPadding();
+  for (int i = 0; s[i] != 0; ++i) {
+    printChar(s[i]);
+  }
+}
+
 // Return 0 on successful print, non 0 on error.
 int printf(const char* fmt, ...) {
   va_list p;
-  va_start (p, fmt);
+  va_start(p, fmt);
+  paddingLen = 0;
 
-  for (int i = 0; fmt[i] != 0; ++i) {
-    if (fmt[i] != '%') {
+  int i = 0;
+  while (fmt[i] != 0) {
+    if (fmt[i] != '%' && paddingLen == 0) {
       printChar(fmt[i]);
     } else {
-      switch (fmt[++i]) {
-        case '%':
-          printChar('%');
-          break;
-        case 'd': 
-          printAsBase(va_arg(p, int), 10);
-          break;
-        case 'l': 
-          printAsBase(va_arg(p, long), 10);
-          break;
-        case 'f':
-          printString("'TODO print float'");
-          break;
-        case 'x': 
+      if (paddingLen == 0) ++i;
+      else if (!strContains("dlxs", fmt[i])) {
+        printf("...\nError: Only '%%d', '%%l' and '%%x' modifiers accept padding.\n");
+        return 1;
+      }
+      switch (fmt[i]) {
+      case '%':
+        printChar('%');
+        break;
+      case 'd':
+        printAsBaseWithPadding(va_arg(p, int), 10);
+        paddingLen = 0;
+        break;
+      case 'l':
+        if (fmt[i + 1] == 'x') {
+          ++i;
           printString("0x");
-          printUintAsBase(va_arg(p, int), 16);
-          break;
-        case 'b': 
-          printString("0b");
-          printAsBase(va_arg(p, int), 2);
-          break;
-        case 's':
-          printString(va_arg(p, char*));
-          break;
-        case 'c':
-          // sysWriteCharNext(va_arg(p, int));
-          printChar(va_arg(p, int));
-          break;
-        default:
+          printUintAsBaseWithPadding(va_arg(p, long), 16);
+        } else {
+          printAsBaseWithPadding(va_arg(p, long), 10);
+        }
+        break;
+      case 'f':
+        printString("'TODO print float'");
+        break;
+      case 'x':
+        printString("0x");
+        printUintAsBaseWithPadding(va_arg(p, int), 16);
+        break;
+      case 'b':
+        printString("0b");
+        printAsBase(va_arg(p, int), 2);
+        break;
+      case 's':
+        printStringWithPadding(va_arg(p, char*));
+        break;
+      case 'c':
+        printChar(va_arg(p, int));
+        break;
+      default:
+        if (IS_DIGIT(fmt[i])) {
+          paddingChar = ' ';
+          if (fmt[i] == '0') {
+            paddingChar = '0';
+            ++i;
+          }
+          char nbr[MAX_PADDING_DIGITS + 1];
+          int j = 0;
+          while (IS_DIGIT(fmt[i]) && j < MAX_PADDING_DIGITS) nbr[j++] = fmt[i++];
+          if (IS_DIGIT(fmt[i])) {
+            printf("...\nFormat error: \"%s\"\n", fmt);
+            printf("Maximum padding of %l exceeded\n", pow(10, MAX_PADDING_DIGITS) - 1);
+            return 1;
+          }
+          nbr[j] = 0;
+          paddingLen = strToInt(nbr);
+        } else {
           printf("\nUnkown option: %%%c\n", fmt[i]);
           return 1;
+        }
       }
     }
+    if (paddingLen == 0) ++i;
   }
   return 0;
 }
 
-#define TO_LOWER(c) ((c >= 'A' && c <= 'Z') ? (c + 'a' - 'A') : c)
-#define IS_HEX_LETTER(c) ('a' <= TO_LOWER(c) && TO_LOWER(c) <= 'f')
-#define IS_NUMBER(c) ('0' <= c && c <= '9')
 int hexCharToDec(char c) {
   c = TO_LOWER(c);
-  if (IS_NUMBER(c)) return c - '0';
+  if (IS_DIGIT(c)) return c - '0';
   else if (IS_HEX_LETTER(c)) return c - 'a' + 10;
   else return -1;
 }
@@ -219,9 +288,10 @@ int strToInt(char* s) {
   }
   int j = strlen(s) - 1;
   int n = 0, k = 1;
-  while (j >= 0 && (IS_NUMBER(s[j]) || (base == 16 && IS_HEX_LETTER(s[j])))) {
-    n += hexCharToDec(s[j])*k;
-    --j; k *= base;
+  while (j >= 0 && (IS_DIGIT(s[j]) || (base == 16 && IS_HEX_LETTER(s[j])))) {
+    n += hexCharToDec(s[j]) * k;
+    --j;
+    k *= base;
   }
   return n * multiplier;
 }
@@ -238,14 +308,9 @@ void printKey(KeyStruct* key) {
   //   key->md.altPressed
   // );
   printf(
-    "('%c' | %x)%s%s%s%s%s\n",
-    key->character,
-    key->code,
-    key->md.ctrlPressed ? " + ctrl" : "",
-    key->md.leftShiftPressed ? " + l-shift" : "",
-    key->md.rightShiftPressed ? " + r-shift" : "",
-    key->md.capsLockActive ? " + capsLock" : "",
-    key->md.altPressed ? " + alt" : ""
+      "('%c' | %x)%s%s%s%s%s\n", key->character, key->code, key->md.ctrlPressed ? " + ctrl" : "",
+      key->md.leftShiftPressed ? " + l-shift" : "", key->md.rightShiftPressed ? " + r-shift" : "",
+      key->md.capsLockActive ? " + capsLock" : "", key->md.altPressed ? " + alt" : ""
   );
 }
 
@@ -257,7 +322,7 @@ void setSrand(unsigned int seed) {
 unsigned int rand() {
   // Using Borland parameters from https://en.wikipedia.org/wiki/Linear_congruential_generator
   // Seems to always alternate between even and odd numbers which kinda sucks but oh well...
-  return srand = ((22695477l*srand + 1) % (2l << 31)) & 0x3FFFFFFF;
+  return srand = ((22695477l * srand + 1) % (2l << 31)) & 0x3FFFFFFF;
 }
 // Apparently returning floating point values is not allowed, I get a compilation error.
 // double normalizedRand() {
@@ -275,15 +340,39 @@ unsigned int randBetween(int min, int max) {
 void printStringXY(int x, int y, char* s, int fontSize, int charsPerRow) {
   int col = 0;
   for (int i = 0; s[i] != 0; ++i) {
-    sysWriteCharXY(
-      x + i*systemInfo.charWidth*fontSize + systemInfo.charSeparation,
-      y, s[i], fontSize
-    );
+    sysWriteCharXY(x + i * systemInfo.charWidth * fontSize + systemInfo.charSeparation, y, s[i], fontSize);
     if (charsPerRow && col > charsPerRow) {
-      y += systemInfo.charHeight*fontSize + systemInfo.charSeparation;
+      y += systemInfo.charHeight * fontSize + systemInfo.charSeparation;
       col = 0;
       x = 0;
     }
     ++col;
   }
+}
+
+int strTrimStartOffset(const char* s) {
+  int i = 0;
+  while (*(s++) == ' ') ++i;
+  return i;
+}
+
+bool strContains(const char* s, const char c) {
+  for (int i = 0; s[i] != 0; ++i) {
+    if (s[i] == c) return true;
+  }
+  return false;
+}
+
+char toLower(char c) {
+  return TO_LOWER(c);
+}
+
+long pow(int x, int n) {
+  // Habría que settear un errno o algo en realidad.
+  if (n < 0) return x;
+  long res = 1;
+  for (int i = 0; i < n; ++i) {
+    res *= x;
+  }
+  return res;
 }

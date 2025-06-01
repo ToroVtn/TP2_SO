@@ -8,8 +8,10 @@ const int asdf = 1;
 SystemInfo systemInfo;
 
 void setFontGridValues() {
-  systemInfo.fontCols = systemInfo.screenWidth/(systemInfo.charWidth*systemInfo.fontSize + systemInfo.charSeparation);
-  systemInfo.fontRows = systemInfo.screenHeight/(systemInfo.charHeight*systemInfo.fontSize + systemInfo.charSeparation);
+  systemInfo.fontCols =
+      systemInfo.screenWidth / (systemInfo.charWidth * systemInfo.fontSize + systemInfo.charSeparation);
+  systemInfo.fontRows =
+      systemInfo.screenHeight / (systemInfo.charHeight * systemInfo.fontSize + systemInfo.charSeparation);
 }
 
 void getSysInfo() {

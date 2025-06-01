@@ -2,25 +2,27 @@
 #define SCHEDULER_H
 
 #include <stdint.h>
+#include <memory.h>
 
-typedef enum { READY, BLOCKED, TERMINATED } ProcessState;
+typedef enum { READY, RUNNING, BLOCKED, EXITED } State;
 
-typedef struct ProcessControlBlock {
-    uint32_t pid;                // Process ID
-    uint8_t priority;           // Process priority      
-    ProcessState state;          // Current state of the process
-    void* rsp;      // Pointer to the process's stack
-    void* rbp;
-    char* name;
-    int code;
-    int waitedCode; // Code that the process waited for
-} ProcessControlBlock;
+typedef struct {
+  uint32_t pid;
+  uint8_t priority;
+  State state;
+  void* rsp;
+  void* rbp;
+  char* name;
+  int exitCode;
+  int waitedProcessExitCode;
+} PCB;
 
-void initPCBlist();
-uint32_t createProcess(int argc, char* argv[], void* processRip);
+// void freePCBNode(PCBNode* node);
+void initializePCBList();
 void* schedule(void* rsp);
-void exitSwitcher();
-void exit(int code);
+uint32_t createUserProcess(int argc, char* argv[], void* processRip);
+extern void exit(int exitCode);
+void startFirstProcess(void* processAddress);
 int waitPid(uint32_t pid);
-//void startFirstProcess(void* processAddress);
+
 #endif

@@ -3,6 +3,6 @@
 
 #include <snakeUtils.h>
 
-void snake(bool withMultiplayer, char* player1Name, char* player2Name);
+void snake(bool withMultiplayer, char* player1Name, char* player2Name, bool mute);
 
 #endif

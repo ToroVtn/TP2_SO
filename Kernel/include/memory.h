@@ -2,10 +2,11 @@
 #define MEMORY_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 void* malloc(uint64_t size);
-void memoryInit(void * heapStart);
-void allocateStack(void** stackBase, void** stackTop);
 void free(void* ptr);
+void memoryInit(void* heapStart);
+void stackAlloc(void** rspStart, void** rspEnd);
 
 #endif

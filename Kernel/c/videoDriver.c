@@ -50,7 +50,7 @@ static RGBColor bgColor = {0};
 static RGBColor fontColor = {0};
 RGBColor cursorColor = {0};
 
-typedef struct vbe_mode_info_structure *VBEInfoPtr;
+typedef struct vbe_mode_info_structure* VBEInfoPtr;
 
 VBEInfoPtr VBE_mode_info = (VBEInfoPtr)0x0000000000005C00;
 
@@ -61,7 +61,7 @@ static int charSeparation = 3;
 static int cursorCol = 0;
 static int cursorRow = 0;
 
-static uint32_t uintToBase(uint64_t value, char * buffer, uint32_t base);
+static uint32_t uintToBase(uint64_t value, char* buffer, uint32_t base);
 
 void setFontGridValues() {
   fontCols = VBE_mode_info->width / (ASCII_BF_WIDTH * fontSize + charSeparation);
@@ -82,7 +82,7 @@ int getCharSeparation() {
 }
 
 void printPixel(int x, int y, RGBColor color) {
-  RGBColor *framebuffer = (RGBColor *)VBE_mode_info->framebuffer;
+  RGBColor* framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
   uint64_t offset = x + (y * VBE_mode_info->pitch / (VBE_mode_info->bpp / 8));
   framebuffer[offset] = color;
 }
@@ -109,7 +109,7 @@ void printCharXY(int x, int y, char c, int fontSize) {
   for (int i = 0; i < ASCII_BF_HEIGHT; ++i) {
     for (int j = 0; j < ASCII_BF_WIDTH; ++j) {
       if (asciiBitFields[c][i * ASCII_BF_WIDTH + j] != 0) {
-        fillRectangle(x + j*fontSize, y + i*fontSize, fontSize, fontSize, fontColor);
+        fillRectangle(x + j * fontSize, y + i * fontSize, fontSize, fontSize, fontColor);
       }
     }
   }
@@ -134,7 +134,7 @@ void eraseChar() {
   colRowToXY(&x, &y);
   for (int i = 0; i < ASCII_BF_HEIGHT; ++i) {
     for (int j = 0; j < ASCII_BF_WIDTH; ++j) {
-      fillRectangle(x + j*fontSize, y + i*fontSize, fontSize, fontSize, bgColor);
+      fillRectangle(x + j * fontSize, y + i * fontSize, fontSize, fontSize, bgColor);
     }
   }
 }
@@ -160,36 +160,36 @@ int printNextChar(char c) {
   return 0;
 }
 
-void printNextString(const char * str){
-    for(int i = 0; str[i] != 0; i++){
-        printNextChar(str[i]);
-    }
+void printNextString(const char* str) {
+  for (int i = 0; str[i] != 0; i++) {
+    printNextChar(str[i]);
+  }
 }
 
-void printNextBase(uint64_t value, uint32_t base){
-    char buffer[getScreenWidth()];
-    uintToBase(value, buffer, base);
-    printNextString(buffer);
+void printNextBase(uint64_t value, uint32_t base) {
+  char buffer[getScreenWidth()];
+  uintToBase(value, buffer, base);
+  printNextString(buffer);
 }
 
-void printNextDec(uint64_t value){
+void printNextDec(uint64_t value) {
   printNextBase(value, 10);
 }
 
-void printNextHex(uint64_t value){
+void printNextHex(uint64_t value) {
   printNextString("0x");
   printNextBase(value, 16);
 }
 
-void printNextHexWithPadding(uint64_t value){
+void printNextHexWithPadding(uint64_t value) {
   static int padding = 16;
   char buffer[getScreenWidth()];
   int digits = uintToBase(value, buffer, 16);
   printNextString("0x");
-  for(int i = 0 + digits; i < padding; i++){
+  for (int i = 0 + digits; i < padding; i++) {
     printNextChar('0');
   }
-	printNextBase(value, 16);
+  printNextBase(value, 16);
 }
 
 void moveCursor(int col, int row) {
@@ -254,15 +254,15 @@ void setRGBColor(RGBColor* color, uint32_t hexColor) {
 
 void setColor(ColorType c, uint32_t hexColor) {
   switch (c) {
-    case BACKGROUND:
-      setRGBColor(&bgColor, hexColor);
-      break;
-    case FONT:
-      setRGBColor(&fontColor, hexColor);
-      break;
-    case CURSOR:
-      setRGBColor(&cursorColor, hexColor);
-      break;
+  case BACKGROUND:
+    setRGBColor(&bgColor, hexColor);
+    break;
+  case FONT:
+    setRGBColor(&fontColor, hexColor);
+    break;
+  case CURSOR:
+    setRGBColor(&cursorColor, hexColor);
+    break;
   }
 }
 
@@ -271,36 +271,31 @@ void clearScreen() {
   moveCursor(0, 0);
 }
 
+static uint32_t uintToBase(uint64_t value, char* buffer, uint32_t base) {
+  char* p = buffer;
+  char *p1, *p2;
+  uint32_t digits = 0;
 
-static uint32_t uintToBase(uint64_t value, char * buffer, uint32_t base)
-{
-	char *p = buffer;
-	char *p1, *p2;
-	uint32_t digits = 0;
+  // Calculate characters for each digit
+  do {
+    uint32_t remainder = value % base;
+    *p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
+    digits++;
+  } while (value /= base);
 
-	//Calculate characters for each digit
-	do
-	{
-		uint32_t remainder = value % base;
-		*p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
-		digits++;
-	}
-	while (value /= base);
+  // Terminate string in buffer.
+  *p = 0;
 
-	// Terminate string in buffer.
-	*p = 0;
+  // Reverse string in buffer.
+  p1 = buffer;
+  p2 = p - 1;
+  while (p1 < p2) {
+    char tmp = *p1;
+    *p1 = *p2;
+    *p2 = tmp;
+    p1++;
+    p2--;
+  }
 
-	//Reverse string in buffer.
-	p1 = buffer;
-	p2 = p - 1;
-	while (p1 < p2)
-	{
-		char tmp = *p1;
-		*p1 = *p2;
-		*p2 = tmp;
-		p1++;
-		p2--;
-	}
-
-	return digits;
+  return digits;
 }

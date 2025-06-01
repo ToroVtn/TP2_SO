@@ -1,20 +1,21 @@
-%include "asm/generalMacros.asm"
+%include "/root/Kernel/asm/include/interruptions_macro.asm"
+%include "/root/Kernel/asm/include/processes_macro.asm"
 
 
 global disableInterruptions
 global enableInterruptions
 global haltTillNextInterruption
-
-global switcher
-global switcherInterruption
 	
 global picMask
 
-
 global timerTickIrqHandler
-global KBIrqHandler
+global keyboardIrqHandler
+
 global exception00Handler
 global exception01Handler
+
+global asdf
+global asdfInterruption
 
 extern irqDispatcher
 extern readKeyCode
@@ -29,45 +30,46 @@ section .text
 timerTickIrqHandler:
   irqHandler 0
 
-switcherInterruption:
+asdfInterruption:
   int 0x22
   ret
 
-switcher:
-  pushAllRegs
+asdf:
+  pushGpr
   mov rdi, rsp
   call schedule
   mov rsp, rax
-  popAllRegs
-  
+  popGpr
+  mov al, 0x20
+  out 0x20, al
   iretq
 
-KBIrqHandler:
+keyboardIrqHandler:
+.captureRegisters:
   push rax
   call readKeyCode
-  cmp al, 0x3b
-  jne .next
-  add rsp, 8
+  cmp al, 0x3b ; f1 para sacar captura de los registros
+  jne .nextProcess
+  pop rax
   pushState
   push qword normalRegistersCode
   call saveRegisters
-  add rsp,8
+  add rsp, 8 ; remove the pushed normalRegistersCode from stack
   popState
-  
+  mov al, 0x20
+  out 0x20, al
   iretq
-
-.next:
-  cmp al, 0x3c 
+.nextProcess: ; Just for testing
+  cmp al, 0x3c ; f2
   pop rax
-  jne .regularKP
-
-.f2:
-  int 0x22 ; switcherInterruption  
+  jne .regularKeyPress
+.f2Press:
+  int 0x22
+  mov al, 0x20
+  out 0x20, al
   iretq
-
-.regularKP:
+.regularKeyPress:
   irqHandler 1
-
 
 exception00Handler:
   exceptionHandler 0
@@ -88,21 +90,11 @@ haltTillNextInterruption:
   ret
 
 picMask:
-	; push rbp
-  ; mov rbp, rsp
-
   mov ax, di
   out	0x21, al
   shr ax, 8
   out	0xA1, al
-
-  ; mov rsp, rbp
-  ; pop rbp
-  retn  ; return near: returns to address in same code segment.
-        ; retf -> return far: can change code segment. Not used in
-        ; modern systems as they use a single code segment.
-        ; ret: compiler decides which of the above should be used. Basically same as retn
-
+  retn
 
 section .rodata
   normalRegistersCode equ 1

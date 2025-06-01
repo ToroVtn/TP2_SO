@@ -9,7 +9,4 @@ typedef uint64_t (*SyscallFunction)(uint64_t a, uint64_t b, uint64_t c, uint64_t
 
 SyscallFunction* getSyscallsArray();
 
-uint32_t sysCreateProcess(int argc, char* argv[], void* rip);
-void sysExit(int code);
-
 #endif

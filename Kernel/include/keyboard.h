@@ -8,11 +8,11 @@
 #define KB_BUF_SIZE 20
 
 typedef struct ModifierKeys {
-  bool leftShiftPressed: 1;
-  bool rightShiftPressed: 1;
-  bool ctrlPressed: 1;
-  bool altPressed: 1;
-  bool capsLockActive: 1;
+  bool leftShiftPressed : 1;
+  bool rightShiftPressed : 1;
+  bool ctrlPressed : 1;
+  bool altPressed : 1;
+  bool capsLockActive : 1;
   // bool altGrPressed: 1;
 } ModifierKeys;
 

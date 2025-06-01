@@ -5,12 +5,11 @@
 #define TIME_STR_LEN 9
 
 typedef struct Time {
-    uint8_t hours;
-    uint8_t minutes;
-    uint8_t seconds;
-    char string[TIME_STR_LEN];
+  uint8_t hours;
+  uint8_t minutes;
+  uint8_t seconds;
+  char string[TIME_STR_LEN];
 } Time;
-
 
 void setBinaryClockFormat();
 uint8_t getCurrentSeconds();

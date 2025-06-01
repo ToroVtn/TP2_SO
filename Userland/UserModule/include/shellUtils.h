@@ -13,8 +13,6 @@
 #include <sysinfo.h>
 #include <utils.h>
 
-
-
 #define MAX_ARG_COUNT 5
 #define MAX_ARG_LEN 50
 #define MAX_COMMAND_COUNT 50
@@ -30,19 +28,41 @@ typedef enum {
   OUT_OF_BOUNDS,
 } ExitCode;
 static const char* const CommandResultStrings[] = {
-    "Success",          "Too many arguments", "Argument too long",  "Command not found",
+    "Success",           "Too many arguments", "Argument too long",  "Command not found",
     "Missing arguments", "Illegal argument",   "Argument of bounds",
 };
 
-
-
 typedef void (*ShellFunction)(int argc, char* [argc]);
+
+/*
+typedef struct {
+  // Set by user
+  char* name;
+  bool required;
+
+  // Set by parseCommandArgs
+  bool found;
+} CommandArgument;
+typedef struct {
+  // Set by user
+  char* shortName;
+  char* longName;
+  char* description;
+  bool hasArgument;
+  bool required;
+
+  // Set by parseCommandOpts
+  char argument[MAX_ARG_LEN];
+  bool found;
+} CommandOption;
+*/
 
 typedef struct ShellCommand {
   char* name;
   char* description;
   ShellFunction function;
- 
+  // CommandArgument arguments[MAX_ARG_COUNT];
+  // CommandOption options[];
 } ShellCommand;
 
 void newPrompt();
@@ -57,11 +77,9 @@ void historyPush();
 void historyPrev();
 void historyNext();
 void resetHistoryCurrentVals();
-
+// void parseCommandOpts(int argc, char argv[argc][MAX_ARG_LEN], int flagCount, CommandOption flags[]);
 
 ExitCode parseCommand();
-
-
 void commandEcho(int argc, char* argv[argc]);
 void commandGetReturnCode();
 void commandRealTime();
@@ -76,7 +94,5 @@ void commandSnake(int argc, char* argv[argc]);
 void commandTest();
 void commandZeroDivisionError();
 void commandInvalidOpcodeError();
-
-
 
 #endif
