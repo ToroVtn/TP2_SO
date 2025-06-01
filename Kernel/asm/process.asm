@@ -4,6 +4,7 @@
 global createStack
 global idleProcess
 global exit
+global userModInit
 
 extern allocateStack
 extern exitProcess
@@ -53,13 +54,13 @@ createStack:
 ; -----------------------------------------------------------------------
 
 ; -------------------------     ROUTINE     ----------------------------
-; Parameters; nonde
+; Parameters; none
 ; Returns: None
 userModInit:
     call userModProcessInit
     mov rsp, rax
     popAllRegs
-    EOI
+    eoi
     iretq
 
 ; -------------------------     ROUTINE     ----------------------------
@@ -78,7 +79,7 @@ idleProcess:
 ; Parameters:
 ;  rdi: exit code (not currently used)
 ; Return: doesn't return
-processExit:
+exit:
     call exitProcess
     int 0x22
 ; -----------------------------------------------------------------------

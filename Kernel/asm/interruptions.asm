@@ -18,6 +18,8 @@ global irq04Handler
 global irq05Handler
 global irq06Handler
 global irq07Handler
+global exception00Handler
+global exception01Handler
 
 global timerTickIrqHandler
 global KBIrqHandler
@@ -39,7 +41,7 @@ switcher:
   call schedule
   mov rsp, rax
   popAllRegs
-  EOI
+  eoi
   iretq
 
 KBIrqHandler:
@@ -53,7 +55,7 @@ KBIrqHandler:
   call saveRegisters
   pop rax
   popState
-  EOI
+  eoi
   iretq
 
 .next:
@@ -62,7 +64,7 @@ KBIrqHandler:
   jne .regularKP
 .f2:
   int 0x22 ; switcherInterruption  
-    EOI
+    eoi
     iretq
 .regularKP:
   irqHandler 1
@@ -95,7 +97,8 @@ KBIrqHandler:
 ;irq07Handler:
 ;  irqHandler 7
 
-
+timerTickIrqHandler:
+  irqHandler 0
 
 exception00Handler:
   exceptionHandler 0

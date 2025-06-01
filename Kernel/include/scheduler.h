@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+
 typedef enum { READY, RUNNING, BLOCKED, TERMINATED } ProcessState;
 
 typedef struct {

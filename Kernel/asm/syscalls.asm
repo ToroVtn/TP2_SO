@@ -40,9 +40,9 @@ global sysPlaySound
 global sysGetCurrentTime
 global sysGetRegisters
 global sysMalloc
-global sysCreateProcess,
-global sysExit,
-global sysWaitPid,
+global sysCreateProcess
+global sysExit
+global sysWaitPid
 
 %macro syscall 1
   mov r9, %1

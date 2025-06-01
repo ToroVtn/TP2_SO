@@ -23,7 +23,7 @@ static const uint64_t PageSize = 0x1000;
 
 typedef int (*EntryPoint)();
 
-static EntryPoint const userModule = (EntryPoint)0x400000;
+EntryPoint const userModule = (EntryPoint)0x400000;
 static EntryPoint const sampleDataModule = (EntryPoint)0x500000;
 
 void clearBSS(void * bssAddress, uint64_t bssSize)

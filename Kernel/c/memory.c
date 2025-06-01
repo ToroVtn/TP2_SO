@@ -50,3 +50,10 @@ void allocateStack(void** stackBase, void** stackTop) {
   *stackBase = *stackTop + stackSize - 1;
   *stackBase = (void*)(((uint64_t)*stackBase - addressByteSize) & ~(addressByteSize - 1));
 }
+
+//NO HACE NADA, ES PARA QUE COMPILE
+void free(void* ptr) {
+  // This is a no-op for now, as we don't support freeing memory.
+  // In a real kernel, you would implement a free list or similar structure to manage memory.
+  (void)ptr; // Avoid unused parameter warning
+}

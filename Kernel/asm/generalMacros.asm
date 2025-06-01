@@ -98,7 +98,7 @@
 %endmacro
 
 ; End of Interrupt macro
-%macro EOI 0
+%macro eoi 0
     mov al, 0x20
     out 0x20, al
 %endmacro
@@ -114,23 +114,23 @@
 %endmacro
 
 ; Exception handler macro
-%macro expnHandler 1
-    pushState
-    push qword exceptionRegistersCode
-    call saveRegisters
-    pop rax
-    popState
-    push rax
-    mov rdi, %1
-    call exceptionDispatcher
-    eoi
-    pop rax
-    call getStackBase
-    mov [rsp+24], rax
-    mov rax, userland
-    mov [rsp], rax
-    iretq
-%endmacro
+;%macro exceptionHandler 1
+  ;  pushState
+  ;  push qword exceptionRegistersCode
+  ;  call saveRegisters
+  ;  pop rax
+  ;  popState
+  ;  push rax
+  ;  mov rdi, %1
+  ;  call exceptionDispatcher
+  ;  eoi
+  ;  pop rax
+    ;call getStackBase
+   ; mov [rsp+24], rax
+  ;  mov rax, userland
+ ;   mov [rsp], rax
+;    iretq
+;%endmacro
 
 
 %macro exceptionHandler 1
