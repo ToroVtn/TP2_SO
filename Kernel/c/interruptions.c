@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <syscalls.h>
 
+
 InterruptionDescriptor* idt = (InterruptionDescriptor*)0;
 
 void setupIdtEntry(int index, void* irqHandler) {

@@ -1,6 +1,3 @@
-; Watch out!!! Modifiying this file isn't detected by the Makefile so a 
-; sudo make clean is necessary for changes to take effect.
-
 %macro pushState 0
 	push r15
   lea r15, [rsp + 8] ; me guardo el stack pointer al entrar a la interrupción
