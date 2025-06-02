@@ -154,11 +154,21 @@ void printUintAsBase(unsigned long n, int base) {
 
 static char paddingChar;
 static int paddingLen = 0;
+static int paddingSign = 1;
 void printPadding() {
   for (int i = 0; i < paddingLen; ++i) {
     printChar(paddingChar);
   }
   paddingLen = 0;
+}
+void printStringWithAlignedPadding(const char* s) {
+  if (paddingSign > 0) {
+    printPadding();
+    printString(s);
+  } else {
+    printString(s);
+    printPadding();
+  }
 }
 void printAsBaseWithPadding(long n, int base) {
   char buf[255];
@@ -170,25 +180,20 @@ void printAsBaseWithPadding(long n, int base) {
     ++s;
     --paddingLen;
   }
-  printPadding();
-  printString(s);
+  printStringWithAlignedPadding(s);
 }
 void printUintAsBaseWithPadding(long n, int base) {
   char buf[255];
   int digits = uintToBase(n, buf, base);
   paddingLen = paddingLen - digits;
   char* s = buf;
-  printPadding();
-  printString(s);
+  printStringWithAlignedPadding(s);
 }
 void printStringWithPadding(const char* s) {
   for (int i = 0; s[i] != 0 && paddingLen > 0; ++i) {
     --paddingLen;
   }
-  printPadding();
-  for (int i = 0; s[i] != 0; ++i) {
-    printChar(s[i]);
-  }
+  printStringWithAlignedPadding(s);
 }
 
 // Return 0 on successful print, non 0 on error.
@@ -204,7 +209,7 @@ int printf(const char* fmt, ...) {
     } else {
       if (paddingLen == 0) ++i;
       else if (!strContains("dlxs", fmt[i])) {
-        printf("...\nError: Only '%%d', '%%l' and '%%x' modifiers accept padding.\n");
+        printf("...\nError: Only '%%s', '%%d', '%%l' and '%%x' modifiers accept padding.\n");
         return 1;
       }
       switch (fmt[i]) {
@@ -231,6 +236,13 @@ int printf(const char* fmt, ...) {
         printString("0x");
         printUintAsBaseWithPadding(va_arg(p, int), 16);
         break;
+      case 'p':
+        paddingLen = 8;
+        paddingSign = 1;
+        paddingChar = '0';
+        printString("0x");
+        printUintAsBaseWithPadding(va_arg(p, long), 16);
+        break;
       case 'b':
         printString("0b");
         printAsBase(va_arg(p, int), 2);
@@ -242,6 +254,11 @@ int printf(const char* fmt, ...) {
         printChar(va_arg(p, int));
         break;
       default:
+        paddingSign = 1;
+        if (fmt[i] == '-') {
+          paddingSign = -1;
+          ++i;
+        }
         if (IS_DIGIT(fmt[i])) {
           paddingChar = ' ';
           if (fmt[i] == '0') {

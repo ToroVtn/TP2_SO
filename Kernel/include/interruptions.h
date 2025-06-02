@@ -51,9 +51,9 @@ void irqDispatcher(uint8_t index);
 void setupIdtEntry(int index, void* irqHandler);
 void loadIdt();
 
-extern void timerTickIrqHandler();
-extern void keyboardIrqHandler();
-extern void asdf();
+extern void TTIrqHandler();
+extern void KBIrqHandler();
+extern void switcher();
 extern void irq03Handler();
 extern void irq04Handler();
 extern void irq05Handler();

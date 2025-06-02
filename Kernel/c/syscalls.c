@@ -31,10 +31,10 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)getCurrentTime,
     (SyscallFunction)getRegisters,
     (SyscallFunction)malloc,
-    (SyscallFunction)createUserProcess,
+    (SyscallFunction)initUserProc,
     (SyscallFunction)exit,
     (SyscallFunction)waitPid,
-    (SyscallFunction)getPCBList,
+    (SyscallFunction)fetchPCBList,
 };
 
 SyscallFunction* getSyscallsArray() {

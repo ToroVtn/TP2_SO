@@ -7,14 +7,14 @@ global haltTillNextInterruption
 	
 global picMask
 
-global timerTickIrqHandler
-global keyboardIrqHandler
+global TTIrqHandler
+global KBIrqHandler
 
 global exception00Handler
 global exception01Handler
 
-global asdf
-global asdfInterruption
+global switcher
+global switcherInterruption
 
 extern irqDispatcher
 extern readKeyCode
@@ -26,48 +26,57 @@ extern schedule
 
 section .text
 
-timerTickIrqHandler:
-  irqHandler 0
-
-asdfInterruption:
-  int 0x22
-  ret
-
-asdf:
-  pushGpr
+TTIrqHandler:
+  ;irqHandler 0
+  pushAllRegs
   mov rdi, rsp
   call schedule
   mov rsp, rax
-  popGpr
+  mov rdi, 0
+  call irqDispatcher
+  popAllRegs
+  eoi
+  iretq
+
+switcherInterruption:
+  int 0x22
+  ret
+
+switcher:
+  pushAllRegs
+  mov rdi, rsp
+  call schedule
+  mov rsp, rax
+  popAllRegs
   mov al, 0x20
   out 0x20, al
   iretq
 
-keyboardIrqHandler:
+KBIrqHandler:
 .captureRegisters:
   push rax
   call readKeyCode
   cmp al, 0x3b ; f1 para sacar captura de los registros
-  jne .nextProcess
+  jne .nextProc
   pop rax
   pushState
   push qword normalRegistersCode
   call saveRegisters
-  add rsp, 8 ; remove the pushed normalRegistersCode from stack
+  add rsp, 8 
   popState
   mov al, 0x20
   out 0x20, al
   iretq
-.nextProcess: ; Just for testing
+.nextProc: 
   cmp al, 0x3c ; f2
   pop rax
-  jne .regularKeyPress
+  jne .regularKP ;regular key pressed
 .f2Press:
   int 0x22
   mov al, 0x20
   out 0x20, al
   iretq
-.regularKeyPress:
+.regularKP:
   irqHandler 1
 
 exception00Handler:

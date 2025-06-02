@@ -7,6 +7,6 @@
 void* malloc(uint64_t size);
 void free(void* ptr);
 void memoryInit(void* heapStart);
-void stackAlloc(void** rspStart, void** rspEnd);
+void allocateStack(void** rspStart, void** rspEnd);
 
 #endif

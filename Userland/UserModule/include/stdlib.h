@@ -38,7 +38,6 @@ int strToInt(char* s);
 void printKey(KeyStruct* key);
 void setSrand(unsigned int seed);
 unsigned int rand();
-// double normalizedRand();
 unsigned int randBetween(int min, int max);
 void printStringXY(int x, int y, char* s, int fontSize, int charsPerRow);
 int strTrimStartOffset(const char* s);

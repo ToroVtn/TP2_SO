@@ -265,8 +265,9 @@ ExitCode parseCommand() {
   }
 
   if (strcmp(argv[argc - 1], "&") == 0) {
-    sysCreateProcess(argc - 1, argv, command);
+    int pid = sysCreateProcess(argc - 1, argv, command);
     for (int i = 0; i < argc; ++i) sysFree(argv[i]);
+    printf("Running in background '%s', pid: %d\n", argv[0], pid);
     return SUCCESS;
   } else {
     int pid = sysCreateProcess(argc, argv, command);
@@ -484,5 +485,6 @@ void commandPs() {
     PCB* pcb = pcbList + i;
     printf("%3d, %-10s, %-10s, %p, %p, %10d\n", pcb->pid, pcb->name, pcb->state, pcb->rsp, pcb->rbp, pcb->priority);
   }
+  sysFree(pcbList);
   sysExit(SUCCESS);
 }

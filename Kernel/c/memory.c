@@ -71,10 +71,10 @@ rsp = (e - 8) & ~7
                                     s >>   
 0x00000000000503f0  00 00 00 00 00 00 00 00
  */
-void stackAlloc(void** stackStart, void** stackEnd) {
-  *stackEnd = malloc(stackSize);
-  *stackStart = *stackEnd + stackSize - 1;
-  *stackStart = (void*)(((uint64_t)*stackStart - addressByteSize) & ~(addressByteSize - 1));
+void allocateStack(void** stackBase, void** stackTop) {
+  *stackTop = malloc(stackSize);
+  *stackBase = *stackTop + stackSize - 1;
+  *stackBase = (void*)(((uint64_t)*stackBase - addressByteSize) & ~(addressByteSize - 1));
 }
 
 void free(void* ptr) {

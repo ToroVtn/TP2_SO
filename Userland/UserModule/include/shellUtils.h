@@ -13,7 +13,7 @@
 #include <sysinfo.h>
 #include <utils.h>
 
-#define MAX_ARG_COUNT 5
+#define MAX_ARG_COUNT 30
 #define MAX_ARG_LEN 50
 #define MAX_COMMAND_COUNT 50
 #define MAX_HISTORY_LEN 50
@@ -34,28 +34,7 @@ static const char* const CommandResultStrings[] = {
 
 typedef void (*ShellFunction)(int argc, char* [argc]);
 
-/*
-typedef struct {
-  // Set by user
-  char* name;
-  bool required;
 
-  // Set by parseCommandArgs
-  bool found;
-} CommandArgument;
-typedef struct {
-  // Set by user
-  char* shortName;
-  char* longName;
-  char* description;
-  bool hasArgument;
-  bool required;
-
-  // Set by parseCommandOpts
-  char argument[MAX_ARG_LEN];
-  bool found;
-} CommandOption;
-*/
 
 typedef struct ShellCommand {
   char* name;

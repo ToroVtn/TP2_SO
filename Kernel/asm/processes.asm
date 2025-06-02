@@ -1,15 +1,15 @@
 %include "/root/Kernel/asm/include/generalMacros.asm"
 
 
-global initializeProcessStack
+global initStack
 global idleProc
 global exit
-global startUserModule
+global initUserModule
 
-extern stackAlloc
-extern exitCurrentProcess
-extern createUserModuleProcess
-extern asdfInterruption
+extern allocateStack
+extern exitProc
+extern initUserModuleProc
+extern switcherInterruption
 
 
 section .text
@@ -24,31 +24,27 @@ section .text
 ; Return
 ;  rax: current stack pointer for created process
 ; -----------------------------------------------------------------------
-initializeProcessStack:
-  ; This is just so gdb detects this function for the call stack.
+initStack:
+  
   push rbp
   mov rbp, rsp
 
-  ; I need to store the original rsp in a register because I'll loose access to the current
-  ; stack when I make the swap for the new process' stack.
+  
   push r11
   mov r11, rsp
 
-  ; Move the stack pointer to the allocated memory (this will be the new process' stack)
   mov rsp, rcx
   mov rbp, rcx
-  push 0      ; ss
-  push rcx    ; original rsp (before the pushes)
-  push 0x202  ; rflags
-  push 0x8    ; cs
-  push rdx    ; rip
+  push 0      
+  push rcx    
+  push 0x202  
+  push 0x8    
+  push rdx    
 
-  ; Note that rdi and rsi still have the correct values of argc and argv
-  initializeGpr
+  initRegs
 
-  mov rax, rsp ; Set final rsp value (after pushes) as return value
+  mov rax, rsp 
 
-  ; Return to original stack
   mov rsp, r11
   pop r11
   pop rbp
@@ -70,7 +66,7 @@ idleProc:
 ; Return: doesn't return
 ; -----------------------------------------------------------------------
 exit:
-  call exitCurrentProcess
+  call exitProc
   int 0x22
 
 ; -------------------------     FUNCTION     ----------------------------
@@ -80,9 +76,10 @@ exit:
 ; Arguments: None
 ; Return: doesn't return
 ; -----------------------------------------------------------------------
-startUserModule:
-  call createUserModuleProcess
+initUserModule:
+  call initUserModuleProc
   mov rsp, rax
-  popGpr
+  popAllRegs
+  sti
   eoi
   iretq

@@ -21,15 +21,14 @@ typedef int (*EntryPoint)();
 EntryPoint const userModule = (EntryPoint)0x400000;
 static EntryPoint const sampleDataModule = (EntryPoint)0x500000;
 
-extern void startUserModule();
+extern void initUserModule();
 
 void clearBSS(void* bssAddress, uint64_t bssSize) {
   memset(bssAddress, 0, bssSize);
 }
 
 void* getStackBase() {
-  // PageSize * 8 = The size of the stack itself, 32KiB
-  // Subtract sizeof(uint64_t) to begin at the top of the stack.
+  //Calculate the stack base address by taking the end of the kernel binary
   return (void*)((uint64_t)&endOfKernel + PageSize * 8 - sizeof(uint64_t));
 }
 
@@ -40,8 +39,6 @@ void* initializeKernelBinary() {
 
   clearBSS(&kernelBss, &endOfKernel - &kernelBss);
 
-  // This NEEDS to be run after clearBSS() because otherwise the uninitialized/zero/null initialized
-  // global/static variables in memory.c will get cleared as well.
   memoryInit(endOfModules);
 
   setBinaryClockFormat();
@@ -52,14 +49,11 @@ void* initializeKernelBinary() {
 int main() {
   loadIdt();
   setFontGridValues();
-  initializePCBList();
+  createPCBList();
 
   // userModule();
-  startUserModule();
+  initUserModule();
 
-  // This should only run until the shell process begins, afterwards I don't
-  // think this code will ever be reached again.
-  // while (1) haltTillNextInterruption();
 
   return 0;
 }

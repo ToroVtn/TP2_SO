@@ -3,7 +3,7 @@
 #include <sysinfo.h>
 
 // Por alguna razón sin esto gdb la flashea con la dirección de systemInfo ¯\_()_/¯
-const int asdf = 1;
+const int switcher = 1;
 
 SystemInfo systemInfo;
 
