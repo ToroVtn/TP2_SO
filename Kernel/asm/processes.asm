@@ -1,5 +1,5 @@
-%include "/root/Kernel/asm/include/processes_macro.asm"
-%include "/root/Kernel/asm/include/interruptions_macro.asm"
+%include "/root/Kernel/asm/include/generalMacros.asm"
+
 
 global initializeProcessStack
 global idleProc
@@ -7,8 +7,8 @@ global exit
 global startUserModule
 
 extern stackAlloc
-extern exitProcess
-extern createUsermModuleProcess
+extern exitCurrentProcess
+extern createUserModuleProcess
 extern asdfInterruption
 
 
@@ -70,7 +70,7 @@ idleProc:
 ; Return: doesn't return
 ; -----------------------------------------------------------------------
 exit:
-  call exitProcess
+  call exitCurrentProcess
   int 0x22
 
 ; -------------------------     FUNCTION     ----------------------------
@@ -81,9 +81,8 @@ exit:
 ; Return: doesn't return
 ; -----------------------------------------------------------------------
 startUserModule:
-  call createUsermModuleProcess
+  call createUserModuleProcess
   mov rsp, rax
   popGpr
-  mov al, 0x20
-  out 0x20, al
+  eoi
   iretq

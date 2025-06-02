@@ -1,7 +1,9 @@
 #include <memory.h>
 #include <scheduler.h>
+#include <stdbool.h>
+#include <utils.h>
 
-// The priority based scheduling will work like this:
+// El priority based scheduling funciona así:
 // - Arranco desde el primer proceso de la pcbList.
 // - Ejecuto ese proceso n cantidad de veces seguidas, donde n es la prioridad del proceso.
 //   - Esto si se puede quizá convendría que sean 4 quantums seguidos sin context switching.
@@ -9,9 +11,6 @@
 
 typedef struct PCBNode {
   PCB* pcb;
-  PCB* waitingForMe[10]; // This should be of dynamic length
-  int wfmLen;
-  void* stack;
   struct PCBNode* next;
 } PCBNode;
 
@@ -20,27 +19,27 @@ typedef struct {
   PCBNode* tail;
   PCBNode* current;
   PCBNode* prev;
-  // int len;
+  int len;
 } PCBList;
 
 extern void* initializeProcessStack(int argc, char* argv[], void* processRip, void* stackStart);
 extern void idleProc();
 extern void* userModule;
-void deleteCurrentProcess();
-
 
 PCBList pcbList;
-PCB idleProcPCB;
+PCBNode* idleProcPCBNode;
 
-PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* rsp, void* rbp, char* name) {
+PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
   PCB* pcb = malloc(sizeof(PCB));
   pcb->pid = pid;
   pcb->priority = priority;
   pcb->state = state;
+  pcb->stack = stack;
   pcb->rsp = rsp;
   pcb->rbp = rbp;
   pcb->name = name;
-  pcb->exitCode = 0;
+  // pcb->exitCode = 0;
+  pcb->wfmLen = 0;
 
   return pcb;
 }
@@ -48,17 +47,63 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* rsp, void* rbp
 PCBNode* createPCBNode(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
   PCBNode* node = malloc(sizeof(PCBNode));
   node->next = NULL;
-  node->pcb = createPCB(pid, priority, state, rsp, rbp, name);
-  node->wfmLen = 0;
-  node->stack = stack;
+  node->pcb = createPCB(pid, priority, state, stack, rsp, rbp, name);
 
   return node;
 }
 
-void freePCBNode(PCBNode* node) {
-  free(node->pcb);
-  free(node->stack);
-  free(node);
+// void freePCBNode(PCBNode* node) {
+//   free(node->pcb);
+//   free(node->stack);
+//   free(node);
+// }
+
+void addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name) {
+  PCBNode* node = createPCBNode(pid, 1, READY, stack, rsp, rbp, name);
+
+  if (pcbList.head == NULL) {
+    pcbList.head = node;
+    pcbList.head->next = node;
+    pcbList.tail = node;
+  } else {
+    if (pcbList.prev == pcbList.tail) pcbList.prev = node;
+    node->next = pcbList.head;
+    pcbList.tail->next = node;
+    pcbList.tail = node;
+  }
+
+  ++pcbList.len;
+}
+
+void freeCurrentProcess() {
+  if (pcbList.current == NULL || pcbList.head == NULL) return;
+  if (pcbList.head == pcbList.tail) return;
+
+  PCBNode* toRemove = pcbList.current;
+
+  pcbList.current = toRemove->next;
+  pcbList.prev->next = pcbList.current;
+  if (pcbList.head == toRemove) pcbList.head = pcbList.current;
+  else if (pcbList.tail == toRemove) pcbList.head = pcbList.prev;
+
+  free(toRemove->pcb->stack);
+  free(toRemove->pcb);
+  free(toRemove);
+
+  --pcbList.len;
+}
+
+void nextPCB() {
+  if (pcbList.head == NULL) return;
+  if (pcbList.current == NULL) {
+    pcbList.current = pcbList.head;
+    pcbList.prev = pcbList.tail;
+  } else if (pcbList.current == idleProcPCBNode) {
+    pcbList.current = pcbList.prev->next;
+  } else {
+    pcbList.prev = pcbList.current;
+    pcbList.current = pcbList.current->next;
+  }
 }
 
 void initializePCBList() {
@@ -66,83 +111,51 @@ void initializePCBList() {
   void* stackEnd;
   stackAlloc(&stackStart, &stackEnd);
   void* rsp = initializeProcessStack(0, NULL, idleProc, stackStart);
-  idleProcPCB.pid = 0;
-  idleProcPCB.priority = 0;
-  idleProcPCB.state = READY;
-  idleProcPCB.rsp = rsp;
+  idleProcPCBNode = createPCBNode(-1, 1, READY, stackEnd, rsp, rsp, NULL);
 
   pcbList.head = NULL;
   pcbList.tail = NULL;
   pcbList.current = NULL;
   pcbList.prev = NULL;
-
-  // pcbList.len = 0;
+  pcbList.len = 0;
 }
 
-void addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name) {
-  PCBNode* node = createPCBNode(pid, 1, READY, stack, rsp, rbp, name);
-
-  if (pcbList.tail == NULL) {
-    pcbList.head = node;
-    pcbList.tail = node;
-  } else {
-    pcbList.tail->next = node;
-    pcbList.tail = node;
-  }
-}
-
-static int quantumsLeft = 0;
+// Should only be called after creating userModule process, so head and current won't be NULL.
 void* schedule(void* rsp) {
+  static int quantumsLeft = 0;
 
-  ////// Some of this things shouldn't be necessary since adding the userModule process. ////
-  if (pcbList.head == NULL) return idleProcPCB.rsp;
+  pcbList.current->pcb->rsp = rsp;
+  pcbList.current->pcb->rbp = *(void**)(rsp + 8 * 8);
 
-  if (pcbList.current == NULL) {
-    pcbList.current = pcbList.head;
-    quantumsLeft = pcbList.current->pcb->priority;
+  if (quantumsLeft > 0 && pcbList.current->pcb->state == RUNNING) {
+    --quantumsLeft;
+    return rsp;
+  } else if (pcbList.current->pcb->state == RUNNING) {
+    pcbList.current->pcb->state = READY;
   }
-  // The checks for current != NULL neither (I think).
-  ///////////////////////////////////////////////////////////////////////////////////////////
 
   PCBNode* ogCurrent = pcbList.current;
-  if (pcbList.current->pcb->state == EXITED) {
-    deleteCurrentProcess();
-    while (pcbList.current != ogCurrent && pcbList.current->pcb->state != READY) {
-      pcbList.prev = pcbList.current;
-      pcbList.current = pcbList.current->next;
-      if (pcbList.current == NULL) pcbList.current = pcbList.head;
+  // We need to always go to next process first so we
+  // 1) don't repeat current if it's READY, and
+  // 2) don't free current process while we are inside its own stack.
+  nextPCB();
+  while (true) {
+    if (pcbList.current->pcb->state == READY) {
+      pcbList.current->pcb->state = RUNNING;
+      quantumsLeft = pcbList.current->pcb->priority - 1;
+      return pcbList.current->pcb->rsp;
+    } else if (pcbList.current == ogCurrent) {
+      // Note: this check also prevents the case where a process exits and all other processes
+      // are blocked, which would otherwise also lead to freeing the current stack.
+      pcbList.current = idleProcPCBNode;
+      return idleProcPCBNode->pcb->rsp;
+    } else if (pcbList.current->pcb->state == EXITED) {
+      // Note that freeCurrentProcess changes current pcb so we need to avoid running
+      // nextPCB() in this branch.
+      freeCurrentProcess();
+    } else {
+      nextPCB();
     }
-  } else {
-    pcbList.current->pcb->rsp = rsp;
-    // rsp is the pointer to the top of the stack after the gpr pushes.
-    // Eight addresses down is where rbp was pushed. So `rsp + 8*8` is a
-    // pointer to rbp, which is a void*, that's why we cast it to a
-    // `void**` and then dereference it to get the actual value of rbp.
-    pcbList.current->pcb->rbp = *(void**)(rsp + 8 * 8);
-
-    if (quantumsLeft > 0 && pcbList.current->pcb->state == READY) {
-      --quantumsLeft;
-      return rsp;
-    }
-
-    // We need to do a full loop on the list from current to current because all
-    // processes after current could be BLOCKED but some before be READY, or all
-    // but current be READY, in which we should continue executing it. Only if
-    // no READY process in the *whole* list is found should we default to the
-    // idle process.
-    do {
-      pcbList.prev = pcbList.current;
-      pcbList.current = pcbList.current->next;
-      if (pcbList.current == NULL) pcbList.current = pcbList.head;
-    } while (pcbList.current != ogCurrent && pcbList.current->pcb->state != READY);
-  }
-
-  if (pcbList.current->pcb->state == READY) {
-    quantumsLeft = pcbList.current->pcb->priority - 1;
-    return pcbList.current->pcb->rsp;
-  } else {
-    // It reached the end of the list without finding any READY process.
-    return idleProcPCB.rsp;
   }
 }
 
@@ -193,9 +206,7 @@ void* createProcess(int argc, char* argv[], void* processRip) {
   char* arg = stackEnd + argc * sizeof(char*);
   for (int i = 0; i < argc; ++i) {
     argvStack[i] = arg;
-    int j = 0;
-    for (; argv[i][j] != 0; ++j) arg[j] = argv[i][j];
-    arg[j] = 0;
+    int j = strncpy(arg, argv[i], MAX_NAME_LENGTH);
     arg = arg + j + 1;
   }
   void* rsp = initializeProcessStack(argc, argvStack, processRip, stackStart);
@@ -203,10 +214,10 @@ void* createProcess(int argc, char* argv[], void* processRip) {
   return rsp;
 }
 
-void* createUsermModuleProcess() {
+void* createUserModuleProcess() {
   char* argv[1] = {"init"};
   void* rsp = createProcess(1, argv, userModule);
-  pcbList.current = pcbList.head;
+  nextPCB();
   return rsp;
 }
 
@@ -215,56 +226,13 @@ uint32_t createUserProcess(int argc, char* argv[], void* processRip) {
   return pid - 1;
 }
 
-void deleteCurrentProcess() {
-  // Do something with exitCode?
-
-  for (int i = 0; i < pcbList.current->wfmLen; ++i) {
-    PCB* pcb = pcbList.current->waitingForMe[i];
-    pcb->state = READY;
-    pcb->waitedProcessExitCode = pcbList.current->pcb->exitCode;
-  }
-
-  PCBNode* nodeToFree = pcbList.current;
-
-  // This first confition shouldn't really ever be true as the head is the "init"
-  // process and it should never exit.
-  if (nodeToFree == pcbList.head) {
-    pcbList.head = pcbList.head->next;
-    pcbList.current = pcbList.head;
-  } else if (nodeToFree == pcbList.tail) {
-    // This should never happen and should be removed after testing...
-    // I'm using it so I get an exception in case this isn't working as it should.
-    if (pcbList.prev == NULL) 1 / 0;
-
-    // Note that prev is not NULL as it could only be NULL if the previous condition
-    // was true, and then it would not have reached this condition.
-    pcbList.tail = pcbList.prev;
-    pcbList.tail->next = NULL;
-    pcbList.current = pcbList.head;
-    pcbList.prev = NULL;
-  } else {
-    // This should never happen and should be removed after testing...
-    // I'm using it so I get an exception in case this isn't working as it should.
-    if (pcbList.prev == NULL) 1 / 0;
-
-    // If nodeToFree->next was NULL the previous condition would be true.
-    pcbList.prev->next = nodeToFree->next;
-    pcbList.current = nodeToFree->next;
-  }
-
-  // Freeing here might be wrong as the scheduler will still be running using the
-  // freed stack until the schedule() function returns and the context is switched.
-  // But meanwhile another process running in another thread (asuming we had multiple
-  // threads) might allocate memory and get addresses belonging to the now freed
-  // stack, which could technically still be in use. Not sure how I can solve this tho,
-  // so for now it will remain like this... (I probably need to find a way to free the
-  // stack in asm right before or after switching context)
-  freePCBNode(nodeToFree);
-}
-
-void exitProcess(int exitCode) {
+void exitCurrentProcess(int exitCode) {
   pcbList.current->pcb->state = EXITED;
-  pcbList.current->pcb->exitCode = exitCode;
+  for (int i = 0; i < pcbList.current->pcb->wfmLen; ++i) {
+    PCB* pcb = pcbList.current->pcb->waitingForMe[i];
+    pcb->state = READY;
+    pcb->waitedProcessExitCode = exitCode;
+  }
 }
 
 extern void asdfInterruption();
@@ -272,11 +240,12 @@ int waitPid(uint32_t pid) {
   PCBNode* node = pcbList.head;
   // Note pcbList is orded by pid because new nodes are always added at the end and
   // pid is always increasing..
-  while (node != NULL && node->pcb->pid <= pid) {
+  while (node->pcb->pid <= pid) {
     if (node->pcb->pid == pid) {
-      node->waitingForMe[node->wfmLen++] = pcbList.current->pcb;
+      node->pcb->waitingForMe[node->pcb->wfmLen++] = pcbList.current->pcb;
       pcbList.current->pcb->state = BLOCKED;
       asdfInterruption(); // Replace for int 0x20 when schedule gets called there.
+      return pcbList.current->pcb->waitedProcessExitCode;
     }
     node = node->next;
   }

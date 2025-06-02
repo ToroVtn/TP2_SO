@@ -1,5 +1,4 @@
-%include "/root/Kernel/asm/include/interruptions_macro.asm"
-%include "/root/Kernel/asm/include/processes_macro.asm"
+%include "/root/Kernel/asm/include/generalMacros.asm"
 
 
 global disableInterruptions
