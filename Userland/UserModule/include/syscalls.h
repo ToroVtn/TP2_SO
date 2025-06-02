@@ -4,6 +4,7 @@
 #include <colors.h>
 #include <keyboard.h>
 #include <sysinfo.h>
+#include <processes.h>
 
 extern void sysHalt();
 extern int sysGetTicks();
@@ -26,5 +27,6 @@ extern void sysFree(void* ptr);
 extern uint32_t sysCreateProcess(int argc, char* argv[], void* processRip);
 extern void sysExit(int exitCode);
 extern int sysWaitPid(uint32_t pid);
+extern PCB* sysPCBList(int* len);
 
 #endif

@@ -94,5 +94,6 @@ void commandSnake(int argc, char* argv[argc]);
 void commandTest();
 void commandZeroDivisionError();
 void commandInvalidOpcodeError();
+void commandPs();
 
 #endif

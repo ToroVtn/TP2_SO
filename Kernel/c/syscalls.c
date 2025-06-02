@@ -34,6 +34,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)createUserProcess,
     (SyscallFunction)exit,
     (SyscallFunction)waitPid,
+    (SyscallFunction)getPCBList,
 };
 
 SyscallFunction* getSyscallsArray() {

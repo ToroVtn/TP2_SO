@@ -22,9 +22,13 @@ typedef struct {
   int len;
 } PCBList;
 
+const char* const StateStrings[4] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+
 extern void* initializeProcessStack(int argc, char* argv[], void* processRip, void* stackStart);
 extern void idleProc();
 extern void* userModule;
+
+
 
 PCBList pcbList;
 PCBNode* idleProcPCBNode;
@@ -256,4 +260,24 @@ int waitPid(uint32_t pid) {
   // Y ahí sí podría conseguir la referencia al hijo aunque ya haya terminado.
   // If no process with the specified pid is found then current process is not blocked.
   return pcbList.current->pcb->waitedProcessExitCode;
+}
+
+void copyPCBToPCBForUserland(PCBForUserland* userlandPcb, PCB* kernelPcb) {
+  strcpy(userlandPcb->name, kernelPcb->name);
+  userlandPcb->pid = kernelPcb->pid;
+  userlandPcb->rsp = kernelPcb->rsp;
+  userlandPcb->rbp = kernelPcb->rbp;
+  userlandPcb->state = StateStrings[kernelPcb->state];
+  userlandPcb->priority = kernelPcb->priority;
+}
+PCBForUserland* getPCBList(int* len) {
+  *len = pcbList.len;
+  if (pcbList.head == NULL) return NULL;
+  PCBForUserland* pcbArray = malloc(sizeof(PCBForUserland) * pcbList.len);
+  PCBNode* node = pcbList.head;
+  for (int i = 0; i < pcbList.len; ++i) {
+    copyPCBToPCBForUserland(pcbArray + i, node->pcb);
+    node = node->next;
+  }
+  return pcbArray;
 }

@@ -20,6 +20,7 @@ global sysMalloc
 global sysCreateProcess,
 global sysExit,
 global sysWaitPid,
+global sysPCBList
 
 %macro syscall 1
   mov r9, %1
@@ -65,3 +66,5 @@ sysExit:
   syscall 17
 sysWaitPid:
   syscall 18
+sysPCBList:
+  syscall 19
