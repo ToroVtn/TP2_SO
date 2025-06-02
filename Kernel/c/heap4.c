@@ -28,7 +28,9 @@ static const uint64_t addressByteSize = sizeof(void*);
 
 #define SUBTRACT_WILL_UNDERFLOW( a, b )    ( ( a ) < ( b ) )
 
-static Block * listStart;
+/*Block * listStart and using it as listStart->whatever crashes when calling 
+to malloc ("cannot access memory adress" error when entering while; checked with gdb) */
+static Block listStart;
 static Block * listEnd = NULL;
 
 static size_t freeBytes;
@@ -37,8 +39,9 @@ void insertBlockIntoFreeList(Block * block);
 
 void memoryInit(void * endOfModules){
     void * alignedHeapStart = (void*) ( ( (uint64_t) endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
-    listStart->nextFreeBlock = (Block *) alignedHeapStart;
-    listStart->blockSize = 0;
+    //&listStart->nFB doesnt compile
+    listStart.nextFreeBlock = (Block *) alignedHeapStart;
+    listStart.blockSize = 0;
 
     void * alignedHeapEnd = (void*)((uint64_t) (alignedHeapStart + HEAP_SIZE - block_size));
     listEnd = (Block *) alignedHeapEnd;
@@ -74,7 +77,7 @@ void * malloc( size_t request ){
     if( alignedRequiredSize > freeBytes || alignedRequiredSize <= 0 || !BLOCK_SIZE_IS_VALID(alignedRequiredSize)) return NULL;
 
     previousBlock = &listStart;
-    block = listStart->nextFreeBlock;
+    block = listStart.nextFreeBlock;
     while( block->blockSize < alignedRequiredSize && block->nextFreeBlock != NULL ){
         previousBlock = block;
         block = block->nextFreeBlock;
@@ -95,9 +98,9 @@ void * malloc( size_t request ){
         newBlockLink->blockSize = block->blockSize - alignedRequiredSize;
         block->blockSize = alignedRequiredSize;
 
-        // insertBlockIntoFreeList(newBlockLink, freeListStart, freeListEnd);
-        newBlockLink->nextFreeBlock = previousBlock->nextFreeBlock;
-        previousBlock->nextFreeBlock = newBlockLink;
+        insertBlockIntoFreeList(newBlockLink);
+        // newBlockLink->nextFreeBlock = previousBlock->nextFreeBlock;
+        // previousBlock->nextFreeBlock = newBlockLink;
     }
 
     freeBytes -= block->blockSize;
@@ -137,7 +140,7 @@ void insertBlockIntoFreeList(Block * block){
     uint8_t * puc; // aux for adress pointer adition
 
     // find a blockIt that has a higher adress than block 
-    for( blockIt = listStart; blockIt->nextFreeBlock < block; blockIt = blockIt->nextFreeBlock ){}
+    for( blockIt = &listStart; blockIt->nextFreeBlock < block; blockIt = blockIt->nextFreeBlock ){}
 
     // check if blockIt and block are contiguous
     puc = ( uint8_t * ) blockIt;
