@@ -9,8 +9,8 @@ typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 
 #define ORDER_COUNT 27
 // 2^(ORDER_COUNT-1) bytes
-#define MAX_MEMORY_AVAILABLE (1 << (ORDER_COUNT - 1))
-#define NULL (void *) 0
+#define HEAP_SIZE (1 << (ORDER_COUNT - 1)) //64MB
+
 
 static const uint64_t addressByteSize = sizeof(void*);
 
@@ -21,15 +21,15 @@ typedef struct Block {
 } Block;
 
 Block* freeList[ORDER_COUNT];
-void* iniAddress;
+void* heapStart;
 
 void memoryInit(void* endOfModules) {
-    iniAddress = endOfModules;
     for (int i = 0; i < ORDER_COUNT; i++) {
         freeList[i] = NULL;
     }
-    Block* initialBlock = (Block*) (((uint64_t)endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
-    initialBlock->size = MAX_MEMORY_AVAILABLE;
+    heapStart = (void*) (((uint64_t)endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
+    Block* initialBlock = (Block*) heapStart;
+    initialBlock->size = HEAP_SIZE;
     initialBlock->isFree = true;
     initialBlock->next = NULL;
     freeList[ORDER_COUNT - 1] = initialBlock;
@@ -97,13 +97,13 @@ static void removeFromFreeList(Block* toRemove, uint32_t order) {
 }
 
 static blockAlignment getAlignment(Block * block) {
-    if((((uint32_t) ((uint8_t *) block - (uint8_t *) iniAddress) / block->size) % 2) == 0)
+    if((((uint32_t) ((uint8_t *) block - (uint8_t *) heapStart) / block->size) % 2) == 0)
         return LEFT;
     return RIGHT;
 }
 
 static void mergeBlock(Block* block, uint32_t order) {
-    if (block->size == MAX_MEMORY_AVAILABLE){
+    if (block->size == HEAP_SIZE){
         freeList[order] = block;
         return;
     }
