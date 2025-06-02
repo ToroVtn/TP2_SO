@@ -1,6 +1,8 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#define BUDDY // comment this to change to the other mm implementation
+
 #include <stdint.h>
 #include <stdio.h>
 

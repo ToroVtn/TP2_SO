@@ -1,4 +1,3 @@
-#include "syscalls.h"
 #include <shellUtils.h>
 
 extern uint8_t bss;
@@ -40,6 +39,7 @@ int shell() {
   addCommand("zeroDivisionError", "Test the zero division error", commandZeroDivisionError);
   addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
   addCommand("ps", "Print the current process list.", commandPs);
+  addCommand("testMM", "Test the memory manager", commandTestMM);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -486,5 +486,11 @@ void commandPs() {
     printf("%3d, %-10s, %-10s, %p, %p, %10d\n", pcb->pid, pcb->name, pcb->state, pcb->rsp, pcb->rbp, pcb->priority);
   }
   sysFree(pcbList);
+  sysExit(SUCCESS);
+}
+
+
+void commandTestMM(){
+  testMM();
   sysExit(SUCCESS);
 }

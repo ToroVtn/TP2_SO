@@ -1,5 +1,5 @@
-#ifndef SHELL_COMMANDS_H
-#define SHELL_COMMANDS_H
+#ifndef SHELL_UTILS_H
+#define SHELL_UTILS_H
 
 #include <circularBuffer.h>
 #include <colors.h>
@@ -74,5 +74,6 @@ void commandTest();
 void commandZeroDivisionError();
 void commandInvalidOpcodeError();
 void commandPs();
+void commandTestMM();
 
 #endif
