@@ -42,6 +42,8 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)waitSemaphore,
     (SyscallFunction)postSemaphore,
     (SyscallFunction)openSemaphore,
+    (SyscallFunction)getpid,
+    (SyscallFunction)kill,
 };
 
 SyscallFunction* getSyscallsArray() {

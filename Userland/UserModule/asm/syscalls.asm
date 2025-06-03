@@ -27,6 +27,8 @@ global sysDestroySemaphore
 global sysWaitSem
 global sysPostSem
 global sysOpenSem
+global sysGetPid
+global sysKill
 
 
 
@@ -88,3 +90,7 @@ sysPostSem:
   syscall 23
 sysOpenSem:
   syscall 24
+sysGetPid:
+  syscall 25
+sysKill:
+  syscall 26

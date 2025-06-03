@@ -42,11 +42,13 @@ int shell() {
       "getRegisters", "Get the values of the saved registers. \n    Available flags: --help", commandGetRegisters
   );
   addCommand("snake", "Play snake.", commandSnake);
-  addCommand("zeroDivisionError", "Test the zero division error", commandZeroDivisionError);
-  addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
+  addCommand("zeroDivisionError", "Test zero division error", commandZeroDivisionError);
+  addCommand("invalidOpcodeError", "Test invalid opcode error", commandInvalidOpcodeError);
   addCommand("ps", "Print the current process list.", commandPs);
   addCommand("testMM", "Test the memory manager", commandTestMM);
   addCommand("testSem", "Test semaphore with multiple processes", commandTestSem);
+  addCommand("kill", "Kill a process by its PID", commandKill);
+  addCommand("getpid", "Print pid for current process.", commandGetPid);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -563,4 +565,24 @@ void commandTestSem(int argc, char *argv[]) {
   printf("Final value: %d\n", global);
   sysDestroySemaphore("sem");
   sysExit(SUCCESS);
+}
+
+void commandGetPid() {
+  printf("PID for current process: %d\n", sysGetPid());
+  sysExit(SUCCESS);
+}
+
+void commandKill(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage: kill <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+  if (sysKill(pid)) {
+    sysExit(SUCCESS);
+  }
+  else {
+    printf("Process with PID: %d was not found or has already exited\n", pid);
+    sysExit(OUT_OF_BOUNDS);
+  }
 }

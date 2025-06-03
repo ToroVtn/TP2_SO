@@ -33,5 +33,7 @@ extern int sysDestroySemaphore(char* name);
 extern int sysWaitSem(int semId);
 extern int sysPostSem(int semId);
 extern int sysOpenSem(char* name, int value);
+extern uint32_t sysGetPid();
+extern bool sysKill(uint32_t pid);
 
 #endif

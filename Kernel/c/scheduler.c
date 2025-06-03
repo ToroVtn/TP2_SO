@@ -24,7 +24,8 @@ extern void idleProc();
 extern void* userModule;
 extern void switcherInterruption();
 
-
+PCB* getPCB(uint32_t pid);
+void exitProcessByPCB(PCB* pcb); 
 
 PCBList pcbList;
 PCBNode* idleProcPCBNode;
@@ -182,38 +183,45 @@ uint32_t initUserProc(int argc, char* argv[], void* procRip) {
   return pid - 1;
 }
 
-void exitProc(int exitCode) {
-  pcbList.current->pcb->state = EXITED;
-  for (int i = 0; i < pcbList.current->pcb->waitingPCBCount; ++i) {
-    PCB* pcb = pcbList.current->pcb->waitingPCBs[i];
-    pcb->state = READY;
-    pcb->waitedProcCode = exitCode;
+void exitProcessByPCB(PCB* pcb) {
+  pcb->state = EXITED;
+  for (int i = 0; i < pcb->waitingPCBCount; ++i) {
+    PCB* pcb2 = pcb->waitingPCBs[i];
+    pcb2->state = READY;
+    pcb2->waitedProcCode = 1;
   }
 }
 
+void exitProc(int exitCode) {
+  exitProcessByPCB(pcbList.current->pcb);
+}
 
+PCB* getPCB(uint32_t pid) { // gets the pcb by using pid
+  PCBNode* node = pcbList.head;
+  do {
+    if (node->pcb->pid == pid) return node->pcb;
+    node = node->next;
+  } while (node->pcb->pid <= pid && node != pcbList.head);
+  return NULL;
+}
 
 int waitPid(uint32_t pid) {
-  if(pid == pcbList.current->pcb->pid) {
-    return pcbList.current->pcb->waitedProcCode; 
+  if (pid == pcbList.current->pcb->pid) {
+    return pcbList.current->pcb->waitedProcCode;
   }
-  PCBNode* node = pcbList.head;
-  
-  while (node->pcb->pid <= pid) {
-    if (node->pcb->pid == pid && node->pcb->state != EXITED) {
-      node->pcb->waitingPCBs[node->pcb->waitingPCBCount++] = pcbList.current->pcb;
-      pcbList.current->pcb->state = BLOCKED;
-      switcherInterruption(); 
-      return pcbList.current->pcb->waitedProcCode;
-    }
-    node = node->next;
-    if(node == pcbList.head) {
-      break;
-    }
+
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL || pcb->state == EXITED) {
+    return pcbList.current->pcb->waitedProcCode;
   }
-  
+  pcb->waitingPCBs[pcb->waitingPCBCount++] = pcbList.current->pcb;
+  pcbList.current->pcb->state = BLOCKED;
+  switcherInterruption(); 
   return pcbList.current->pcb->waitedProcCode;
 }
+
+
+
 
 void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
   strcpy(userlandPcb->name, kernelPcb->name);
@@ -246,4 +254,17 @@ void blockProc() {
 
 void readyProc(const PCB* pcb) {
   ((PCB*)pcb)->state = READY;
+}
+
+uint32_t getpid() {
+  return pcbList.current->pcb->pid;
+}
+
+bool kill(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL || pcb->state == EXITED) {
+    return false;
+  }
+  exitProcessByPCB(pcb);
+  return true;
 }
