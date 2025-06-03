@@ -22,6 +22,7 @@ const char* const stateNames[4] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
 extern void* initStack(int argc, char* argv[], void* procRip, void* stackBase);
 extern void idleProc();
 extern void* userModule;
+extern void switcherInterruption();
 
 
 
@@ -190,7 +191,7 @@ void exitProc(int exitCode) {
   }
 }
 
-extern void switcherInterruption();
+
 
 int waitPid(uint32_t pid) {
   if(pid == pcbList.current->pcb->pid) {
@@ -207,7 +208,6 @@ int waitPid(uint32_t pid) {
     }
     node = node->next;
     if(node == pcbList.head) {
-     
       break;
     }
   }

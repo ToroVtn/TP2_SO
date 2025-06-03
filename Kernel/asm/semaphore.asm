@@ -2,9 +2,9 @@ GLOBAL enterCritical
 GLOBAL exitCritical
 
 enterCritical:
-  mov rax,1
-  xchg rax,[rdi]
-  cmp rax,0
+  mov eax,1
+  xchg eax,[rdi]
+  cmp eax,0
   je exit
   int 22h
   jmp enterCritical
@@ -12,5 +12,5 @@ enterCritical:
   ret
     
 exitCritical:
-   mov qword [rdi], 0
+   mov dword [rdi], 0
    ret

@@ -1,7 +1,7 @@
 #ifndef SEMPAPHORES_SEMAPHORE_H
 #define SEMPAPHORES_SEMAPHORE_H
 
-#include "stdlib.h"
+#include <memory.h>
 #include "semaphores.h"
 #include "scheduler.h"
 #include "utils.h"

@@ -21,7 +21,7 @@ int currentCommandIdx = 0;
 static int commandReturnCode = 0;
 
 int64_t global;
-#define SEM_ID "sem"
+#define SEM_NAME "sem"
 #define PROCESS_PAIRS 2
 
 
@@ -46,9 +46,7 @@ int shell() {
   addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
   addCommand("ps", "Print the current process list.", commandPs);
   addCommand("testMM", "Test the memory manager", commandTestMM);
-  addCommand("createSem", "Creates a semaphore", commandCreateSemaphore);
-  addCommand("destroySem", "Destroys a semaphore", commandDestroySemaphore);
-  addCommand("testSem", "Takes global variable to 1000", commandTestSem);
+  addCommand("testSem", "Test semaphore with multiple processes", commandTestSem);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -498,108 +496,71 @@ void commandTestMM(){
   sysExit(SUCCESS);
 }
 
-void commandCreateSemaphore(int argc, char* argv[argc]) {
-    if (argc != 3) {
-        puts("Usage:");
-        printf("\t\t%s <Name> <Value>\n", argv[0]);
-        sysExit(MISSING_ARGUMENTS);
-    }
-    char* semName = argv[1];
-    int semValue = strToInt(argv[2]);
-    int semId = sysCreateSemaphore(semName, semValue);
-    if (semId == -1) {
-        puts("Error creating semaphore");
-    } else {
-        printf("Semaphore created successfully, ID: %d\n", semId);
-    }
-    sysExit(SUCCESS);
-}
-void commandDestroySemaphore(int argc, char* argv[argc]){
-    if (argc!=2){
-        puts("Usage:");
-        printf("\t\t%s <Name>\n", argv[0]);
-        sysExit(MISSING_ARGUMENTS);
-    }
-    printf("%s\n", argv[1]);
-    int sem=sysDestroySemaphore(argv[1]);
-    printf("%5d\n", sem);
-    sysExit(SUCCESS);
+void racyInc(int64_t* p, int64_t inc) {
+  int64_t aux = *p;
+  commandChangeProcess(); 
+  aux += inc;
+  *p = aux;
 }
 
-void raceyInc(int64_t *p, int64_t inc) {
-    uint64_t aux = *p;
-    commandChangeProcess(); 
-    aux += inc;
-    *p = aux;
+void semTestWorker(uint64_t argc, char* argv[argc]) {
+  if (argc != 4) {
+    sysExit(SUCCESS);
+  }
+
+  int count = strToInt(argv[1]);
+  int inc = strToInt(argv[2]);
+  int semToUse = strToInt(argv[3]);
+
+  if (count <= 0 || inc == 0 || semToUse < 0) {
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+
+  if (semToUse) {
+    int sem = sysOpenSem("sem", 1);
+    if (sem < 0) {
+      printf("semTestWorker: ERROR opening semaphore\n");
+      sysExit(MISSING_ARGUMENTS);
+    }
+    for (int i = 0; i < count; i++) {
+      sysWaitSem(sem);
+      racyInc(&global, inc);
+      sysPostSem(sem);
+    }
+  } else {
+    for (int i = 0; i < count; i++) racyInc(&global, inc);
+  }
+  if (semToUse) sysDestroySemaphore("sem");
+  printf("Final value in process: %l\n", global);
+  sysExit(SUCCESS);
 }
 
-void semTestWorker(uint64_t argc, char *argv[]) {
+
+void commandTestSem(int argc, char *argv[]) {  
+  if (argc != 3){
+    printf("Usage: %s <count> <sem>\n", argv[0]);
+    printf("\tcount: number of iterations for each process\n");
+    printf("\tsem: 0 for no semaphores, not 0 to use semaphores\n");
+    sysExit(MISSING_ARGUMENTS);
+  }
     
-    if (argc != 4) {
-        sysExit(MISSING_ARGUMENTS);
-    }
+  uint64_t pids[2 * PROCESS_PAIRS];
+  char *argvDec[] = {"semTestWorker", argv[1], "-1", argv[2]};
+  char *argvInc[] = {"semTestWorker", argv[1], "1", argv[2]};
 
-  
-    int count = strToInt(argv[1]);
-    int inc = strToInt(argv[2]);
-    int semToUse = strToInt(argv[3]);
+  global = 0;
+  int sem = sysCreateSemaphore("sem", 1);
+  for (int i = 0; i < PROCESS_PAIRS; i++) {
+      pids[i] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvDec, semTestWorker);
+    pids[i + PROCESS_PAIRS] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvInc, semTestWorker);
+  }
 
-    if (count <= 0 || inc == 0 || semToUse < 0) {
-        sysExit(ILLEGAL_ARGUMENT);
-    }
+  for (int i = 0; i < PROCESS_PAIRS; i++) {
+      sysWaitPid(pids[i]);
+      sysWaitPid(pids[i + PROCESS_PAIRS]);
+  }
 
-    int sem = 0;
-    if (semToUse) {
-        
-        if (sem != 0) {
-            printf("semTestWorker: ERROR opening semaphore\n");
-            sysExit(MISSING_ARGUMENTS);
-        }
-        
-    }
-    
-    int i;
-    for (i = 0; i < count; i++) {
-        if (semToUse) {
-            sysWaitSem(sem);
-        }
-        raceyInc(&global, inc);
-        if (semToUse) {
-            sysPostSem(sem);
-        }
-    }
-
-    
-    printf("Final value in process: %d\n", global);
-    sysExit(SUCCESS);
-    
-}
-
-void commandTestSem(uint64_t argc, char *argv[]) {  
-    if (argc!=4){
-        sysExit(MISSING_ARGUMENTS);
-    }
-    
-    uint64_t pids[2 * PROCESS_PAIRS];
-
-    char *argvDec[] = {"semTestWorker", argv[1], "-1", argv[2], NULL};
-    char *argvInc[] = {"semTestWorker", argv[1], "1", argv[2], NULL};
-
-    global = 0;
-
-    uint64_t i;
-    for (i = 0; i < PROCESS_PAIRS; i++) {
-        pids[i] = sysCreateProcess(4, argvDec, semTestWorker);
-        pids[i + PROCESS_PAIRS] = sysCreateProcess(4, argvInc, semTestWorker);
-    }
-
-    int sem = sysCreateSemaphore("sem", 1);
-    for (i = 0; i < PROCESS_PAIRS; i++) {
-        sysWaitPid(pids[i]);
-        sysWaitPid(pids[i + PROCESS_PAIRS]);
-    }
-
-    printf("Final value: %d\n", global);
-    sysDestroySemaphore("sem");
-    sysExit(SUCCESS);
+  printf("Final value: %d\n", global);
+  sysDestroySemaphore("sem");
+  sysExit(SUCCESS);
 }
