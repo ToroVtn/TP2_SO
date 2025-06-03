@@ -75,5 +75,9 @@ void commandZeroDivisionError();
 void commandInvalidOpcodeError();
 void commandPs();
 void commandTestMM();
+void commandCreateSemaphore();
+void commandDestroySemaphore();
+void commandTestSem();
+void commandChangeProcess();
 
 #endif

@@ -1,5 +1,6 @@
 #include <shellUtils.h>
 
+
 extern uint8_t bss;
 
 // Circular buffer. Stores just the command indexes in the global screenBuffer.
@@ -18,6 +19,11 @@ int historyCurrentCount = 0;
 int currentCommandIdx = 0;
 
 static int commandReturnCode = 0;
+
+int64_t global;
+#define SEM_ID "sem"
+#define PROCESS_PAIRS 2
+
 
 int shell() {
   setShellColors(0xC0CAF5, 0x1A1B26, 0xFFFF11);
@@ -40,6 +46,9 @@ int shell() {
   addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
   addCommand("ps", "Print the current process list.", commandPs);
   addCommand("testMM", "Test the memory manager", commandTestMM);
+  addCommand("createSem", "Creates a semaphore", commandCreateSemaphore);
+  addCommand("destroySem", "Destroys a semaphore", commandDestroySemaphore);
+  addCommand("testSem", "Takes global variable to 1000", commandTestSem);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -220,9 +229,6 @@ void autocomplete() {
 }
 
 ExitCode parseCommand() {
-  // MAX_ARG_COUNT is large enough for me to ignore the error of the user going
-  // over it. It's a pain to take it into account. If it has to be done I'd rather
-  // make a dynamic sized array.
   char* argv[MAX_ARG_COUNT];
   int argc = 0, len = 0;
   int i = currentCommandIdx;
@@ -254,9 +260,7 @@ ExitCode parseCommand() {
   } while (c != '\n');
 
   if (argv[0][0] == 0) return SUCCESS;
-  // It's inefficient checking if the command is valid after parsing all the arguments.
-  // But doing it right after parsing the first word was annoying because there're two
-  // cases: `command arg1 ...\n` and `command\n`
+  
   command = getCommand(argv[0]);
   if (command == NULL) {
     printf("%s: %s\n", CommandResultStrings[COMMAND_NOT_FOUND], argv[0]);
@@ -319,7 +323,7 @@ void commandGetKeyInfo() {
   sysExit(SUCCESS);
 }
 
-// argc aka rdi is arriving as 0 for some reason.
+
 void commandRand(int argc, char* argv[argc]) {
   static bool randInitialized = false;
   if (!randInitialized) {
@@ -468,8 +472,7 @@ void commandSnake(int argc, char* argv[argc]) {
   sysExit(SUCCESS);
 }
 void commandZeroDivisionError() {
-  // Always set srand because after the exception the modules starts anew
-  // and srand is zero again.
+  
   setSrand(sysGetTicks());
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiv-by-zero"
@@ -493,4 +496,110 @@ void commandPs() {
 void commandTestMM(){
   testMM();
   sysExit(SUCCESS);
+}
+
+void commandCreateSemaphore(int argc, char* argv[argc]) {
+    if (argc != 3) {
+        puts("Usage:");
+        printf("\t\t%s <Name> <Value>\n", argv[0]);
+        sysExit(MISSING_ARGUMENTS);
+    }
+    char* semName = argv[1];
+    int semValue = strToInt(argv[2]);
+    int semId = sysCreateSemaphore(semName, semValue);
+    if (semId == -1) {
+        puts("Error creating semaphore");
+    } else {
+        printf("Semaphore created successfully, ID: %d\n", semId);
+    }
+    sysExit(SUCCESS);
+}
+void commandDestroySemaphore(int argc, char* argv[argc]){
+    if (argc!=2){
+        puts("Usage:");
+        printf("\t\t%s <Name>\n", argv[0]);
+        sysExit(MISSING_ARGUMENTS);
+    }
+    printf("%s\n", argv[1]);
+    int sem=sysDestroySemaphore(argv[1]);
+    printf("%5d\n", sem);
+    sysExit(SUCCESS);
+}
+
+void raceyInc(int64_t *p, int64_t inc) {
+    uint64_t aux = *p;
+    commandChangeProcess(); 
+    aux += inc;
+    *p = aux;
+}
+
+void semTestWorker(uint64_t argc, char *argv[]) {
+    
+    if (argc != 4) {
+        sysExit(MISSING_ARGUMENTS);
+    }
+
+  
+    int count = strToInt(argv[1]);
+    int inc = strToInt(argv[2]);
+    int semToUse = strToInt(argv[3]);
+
+    if (count <= 0 || inc == 0 || semToUse < 0) {
+        sysExit(ILLEGAL_ARGUMENT);
+    }
+
+    int sem = 0;
+    if (semToUse) {
+        
+        if (sem != 0) {
+            printf("semTestWorker: ERROR opening semaphore\n");
+            sysExit(MISSING_ARGUMENTS);
+        }
+        
+    }
+    
+    int i;
+    for (i = 0; i < count; i++) {
+        if (semToUse) {
+            sysWaitSem(sem);
+        }
+        raceyInc(&global, inc);
+        if (semToUse) {
+            sysPostSem(sem);
+        }
+    }
+
+    
+    printf("Final value in process: %d\n", global);
+    sysExit(SUCCESS);
+    
+}
+
+void commandTestSem(uint64_t argc, char *argv[]) {  
+    if (argc!=4){
+        sysExit(MISSING_ARGUMENTS);
+    }
+    
+    uint64_t pids[2 * PROCESS_PAIRS];
+
+    char *argvDec[] = {"semTestWorker", argv[1], "-1", argv[2], NULL};
+    char *argvInc[] = {"semTestWorker", argv[1], "1", argv[2], NULL};
+
+    global = 0;
+
+    uint64_t i;
+    for (i = 0; i < PROCESS_PAIRS; i++) {
+        pids[i] = sysCreateProcess(4, argvDec, semTestWorker);
+        pids[i + PROCESS_PAIRS] = sysCreateProcess(4, argvInc, semTestWorker);
+    }
+
+    int sem = sysCreateSemaphore("sem", 1);
+    for (i = 0; i < PROCESS_PAIRS; i++) {
+        sysWaitPid(pids[i]);
+        sysWaitPid(pids[i + PROCESS_PAIRS]);
+    }
+
+    printf("Final value: %d\n", global);
+    sysDestroySemaphore("sem");
+    sysExit(SUCCESS);
 }
