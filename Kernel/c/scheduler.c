@@ -46,7 +46,7 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
   }
 
   #ifdef BUDDY
-    freeListInit(pcb->heap, pcb->freeList);
+    listInit(pcb->heap, pcb->freeList);
   #else
     pcb->listStart = globalMalloc(sizeof(Block));
     if (pcb->listStart == NULL) {

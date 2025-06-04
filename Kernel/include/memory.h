@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-// #define BUDDY // comment this to change to the other mm implementation
+#define BUDDY // comment this to change to the other mm implementation
 
 #include <stdint.h>
 #include <stdio.h>
@@ -15,7 +15,7 @@ typedef struct Block {
     bool isFree;
 } Block;
 
-void freeListInit(void* heapStart, Block* freeList[]);
+void listInit(void* heapStart, Block* freeList[]);
 
 #else
 

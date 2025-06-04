@@ -1,4 +1,5 @@
 #include <memory.h>
+#include <scheduler.h>
 
 #ifdef BUDDY
 
@@ -13,18 +14,26 @@ typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 static const uint64_t addressByteSize = sizeof(void*);
 
 Block* freeList[ORDER_COUNT];
-void* heapStart;
+void* heap_start;
 
-void memoryInit(void* endOfModules) {
+void internalListInit(int32_t orderCount, void* heapStart, uint32_t heapSize, Block* freeList[]){
     for (int i = 0; i < ORDER_COUNT; i++) {
         freeList[i] = NULL;
     }
-    heapStart = (void*) (((uint64_t)endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
-    Block* initialBlock = (Block*) heapStart;
-    initialBlock->size = HEAP_SIZE;
+    Block* initialBlock = (Block *) (((uint64_t) heapStart + addressByteSize - 1) & ~(addressByteSize - 1));
+    initialBlock->size = heapSize;
     initialBlock->isFree = true;
     initialBlock->next = NULL;
-    freeList[ORDER_COUNT - 1] = initialBlock;
+    freeList[orderCount - 1] = initialBlock;
+}
+
+void listInit(void* heapStart, Block* freeList[]){
+    internalListInit(PROCESS_HEAP_ORDER_COUNT, heapStart, PROCESS_HEAP_SIZE, freeList);
+}
+
+void memoryInit(void* endOfModules) {
+    heap_start = endOfModules;
+    internalListInit(ORDER_COUNT, endOfModules, HEAP_SIZE, freeList);
 }
 
 static int getOrder(uint32_t size) {
@@ -47,7 +56,7 @@ static Block* splitBlock(Block* block) {
     return buddy;
 }
 
-void* malloc(uint64_t size) {
+void* internalMalloc(uint64_t size, int32_t orderCount, Block* freeList[]) {
     // the block will also be allocated in the physical address
     int order = getOrder(size + sizeof(Block));
 
@@ -71,6 +80,15 @@ void* malloc(uint64_t size) {
     return NULL;
 }
 
+void * globalMalloc(size_t size){
+    return internalMalloc(size, ORDER_COUNT, freeList);
+}
+
+void * malloc(size_t size){
+    PCB * pcb = fetchCurrentPCB();
+    return internalMalloc(size, PROCESS_HEAP_ORDER_COUNT, pcb->freeList);
+}
+
 static void removeFromFreeList(Block* toRemove, uint32_t order) {
     toRemove->isFree = false;
     if (freeList[order] == toRemove) {
@@ -88,19 +106,19 @@ static void removeFromFreeList(Block* toRemove, uint32_t order) {
     toRemove->next = NULL;
 }
 
-static blockAlignment getAlignment(Block * block) {
+static blockAlignment getAlignment(Block * block, void * heapStart) {
     if((((uint32_t) ((uint8_t *) block - (uint8_t *) heapStart) / block->size) % 2) == 0)
         return LEFT;
     return RIGHT;
 }
 
-static void mergeBlock(Block* block, uint32_t order) {
-    if (block->size == HEAP_SIZE){
+static void mergeBlock(Block* block, uint32_t order, void* heapStart, uint64_t heapSize, Block* freeList[]) {
+    if (block->size == heapSize){
         freeList[order] = block;
         return;
     }
 
-    blockAlignment blockAlignment = getAlignment(block);
+    blockAlignment blockAlignment = getAlignment(block, heapStart);
     
     Block* buddy = (blockAlignment == LEFT)
         ? (Block*)((char*)block + block->size)
@@ -115,22 +133,33 @@ static void mergeBlock(Block* block, uint32_t order) {
     removeFromFreeList(block, order);
     removeFromFreeList(buddy, order);
     
-    if(blockAlignment == RIGHT)
-        block = buddy;
+    if(blockAlignment == RIGHT) block = buddy;
 
     block->size *= 2;
     block->isFree = true;
-    mergeBlock(block, order + 1);
+    mergeBlock(block, order + 1, heapStart, heapSize, freeList);
 }
 
-void free(void* ptr) {
+void globalFree(void* ptr) {
     if (ptr == NULL) return;
 
     Block* block = (Block*)ptr - 1;
     block->isFree = true;
     int order = getOrder(block->size);
 
-    mergeBlock(block, order);
+    mergeBlock(block, order, heap_start, HEAP_SIZE, freeList);
+}
+
+void free(void * ptr){
+    if(ptr == NULL) return;
+
+    PCB * pcb = fetchCurrentPCB();
+    if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
+
+    Block* block = (Block*)ptr - 1;
+    block->isFree = true;
+    int order = getOrder(block->size);
+    mergeBlock(block, order, pcb->heap, PROCESS_HEAP_SIZE, pcb->freeList);
 }
 
 // void getMemoryState(char* buffer) {
