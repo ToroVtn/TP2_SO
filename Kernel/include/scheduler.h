@@ -2,6 +2,11 @@
 #define SCHEDULER_H
 
 #include <stdint.h>
+#include <memory.h>
+#include <stdbool.h>
+
+#define PROCESS_HEAP_ORDER_COUNT 17
+#define PROCESS_HEAP_SIZE (1 << (PROCESS_HEAP_ORDER_COUNT - 1))
 
 #define MAX_NAME_LENGTH 60
 
@@ -19,6 +24,15 @@ typedef struct PCB {
   struct PCB* waitingPCBs[10]; 
   int waitingPCBCount;
   void* stack;
+  void* heap;
+  bool heapFreed;
+#ifdef BUDDY
+  Block* freeList[PROCESS_HEAP_ORDER_COUNT];
+#else
+  Block* listStart;
+  Block* listEnd;
+  size_t freeBytes;
+#endif
 } PCB;
 
 typedef struct {
@@ -38,8 +52,8 @@ extern void exit(int exitCode);
 void startFirstProcess(void* procAddress);
 int waitPid(uint32_t pid);
 userlandPCB* fetchPCBList(int* len);
-const PCB* fetchCurrentPCB();
+PCB* fetchCurrentPCB();
 void blockProc();
-void readyProc(const PCB* pcb);
+void readyProc(PCB* pcb);
 
 #endif

@@ -23,13 +23,11 @@ extern void* initStack(int argc, char* argv[], void* procRip, void* stackBase);
 extern void idleProc();
 extern void* userModule;
 
-
-
 PCBList pcbList;
 PCBNode* idleProcPCBNode;
 
 PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
-  PCB* pcb = malloc(sizeof(PCB));
+  PCB* pcb = globalMalloc(sizeof(PCB));
   pcb->pid = pid;
   pcb->priority = priority;
   pcb->state = state;
@@ -39,12 +37,35 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
   pcb->name = name;
   // pcb->exitCode = 0;
   pcb->waitingPCBCount = 0;
+  pcb->heapFreed = false;
+  
+  pcb->heap = globalMalloc(PROCESS_HEAP_SIZE);
+  if (pcb->heap == NULL) {
+    globalFree(pcb);
+    return NULL;
+  }
+
+  #ifdef BUDDY
+    freeListInit(pcb->heap, pcb->freeList);
+  #else
+    pcb->listStart = globalMalloc(sizeof(Block));
+    if (pcb->listStart == NULL) {
+      globalFree(pcb);
+      globalFree(pcb->heap);
+      return NULL;
+    }
+    listInit(pcb->heap, pcb->listStart, &(pcb->listEnd), &(pcb->freeBytes));
+  #endif
 
   return pcb;
 }
 
 PCBNode* createPCBNode(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
-  PCBNode* node = malloc(sizeof(PCBNode));
+  PCBNode* node = globalMalloc(sizeof(PCBNode));
+  if(node == NULL){
+    globalFree(node);
+    return NULL;
+  }
   node->next = NULL;
   node->pcb = createPCB(pid, priority, state, stack, rsp, rbp, name);
 
@@ -85,9 +106,14 @@ void freeCurrent() {
   if (pcbList.head == toRemove) pcbList.head = pcbList.current;
   else if (pcbList.tail == toRemove) pcbList.tail = pcbList.previous;
 
-  free(toRemove->pcb->stack);
-  free(toRemove->pcb);
-  free(toRemove);
+  if (!toRemove->pcb->heapFreed) globalFree(toRemove->pcb->heap);
+  #ifndef BUDDY
+  globalFree(toRemove->pcb->listStart);
+  #endif
+
+  globalFree(toRemove->pcb->stack);
+  globalFree(toRemove->pcb);
+  globalFree(toRemove);
 
   --pcbList.len;
 }
@@ -226,7 +252,7 @@ void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
 userlandPCB* fetchPCBList(int* len) {
   *len = pcbList.len;
   if (pcbList.head == NULL) return NULL;
-  userlandPCB* pcbArray = malloc(sizeof(userlandPCB) * pcbList.len);
+  userlandPCB* pcbArray = globalMalloc(sizeof(userlandPCB) * pcbList.len);
   PCBNode* node = pcbList.head;
   for (int i = 0; i < pcbList.len; ++i) {
     convertPCBToUserland(pcbArray + i, node->pcb);
@@ -235,7 +261,7 @@ userlandPCB* fetchPCBList(int* len) {
   return pcbArray;
 }
 
-const PCB* fetchCurrentPCB() {
+PCB* fetchCurrentPCB() {
   return pcbList.current->pcb;
 }
 
@@ -244,6 +270,6 @@ void blockProc() {
   switcherInterruption();
 }
 
-void readyProc(const PCB* pcb) {
+void readyProc(PCB* pcb) {
   ((PCB*)pcb)->state = READY;
 }

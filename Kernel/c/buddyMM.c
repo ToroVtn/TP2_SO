@@ -4,7 +4,6 @@
 
 #include <stdint.h>
 
-typedef enum { false = 0, true = 1 } boolean;
 typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 
 #define ORDER_COUNT 27
@@ -12,12 +11,6 @@ typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 #define HEAP_SIZE (1 << (ORDER_COUNT - 1)) //64MB
 
 static const uint64_t addressByteSize = sizeof(void*);
-
-typedef struct Block {
-    struct Block* next;
-    uint32_t size;
-    boolean isFree;
-} Block;
 
 Block* freeList[ORDER_COUNT];
 void* heapStart;
