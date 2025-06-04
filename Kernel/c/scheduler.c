@@ -134,9 +134,10 @@ void* schedule(void* rsp) {
   } else if (pcbList.current->pcb->state == RUNNING) {
     pcbList.current->pcb->state = READY;
   }
-
-  PCBNode* targetNode = (pcbList.current == idleProcPCBNode) ? pcbList.tail : pcbList.current;;
-  
+  if(pcbList.current == idleProcPCBNode) {
+    nextPCB();
+  }
+  PCBNode* targetNode = pcbList.current;
   nextPCB();
   while (true) {
     if (pcbList.current->pcb->state == READY) {

@@ -96,15 +96,15 @@ int openSemaphore(char* name, int value) {
     return openSem(name, value);
 }
 
-int initSem(char *name, unsigned int init_value) {
-    if (findSem(name)!=ERROR)
+int initSem(char *name, unsigned int initialValue) {
+    if (findSem(name) != ERROR)
         return ERROR;
     int pos = findSemSlot();
     if (pos == ERROR) {
         return ERROR;
     }
     semArray[pos].sem = malloc(sizeof(semaphore));
-    if (semArray[pos].sem==NULL){
+    if (semArray[pos].sem == NULL){
         return ERROR;
     }
    semArray[pos].sem->name = malloc(strlen(name) + 1);
@@ -113,8 +113,8 @@ int initSem(char *name, unsigned int init_value) {
         return ERROR;
     }
     strcpy(semArray[pos].sem->name, name);
-    semArray[pos].sem->value = init_value;
-    semArray[pos].sem->lock=0;
+    semArray[pos].sem->value = initialValue;
+    semArray[pos].sem->lock = 0;
     semArray[pos].used = 1;
     semArray[pos].sem->firstProc = NULL;
     semArray[pos].sem->lastProc = NULL;
@@ -129,7 +129,7 @@ int initSem(char *name, unsigned int init_value) {
 
 int openSem(char *name, int value) {
     int semId = findSem(name);
-    if (semId == ERROR && value != -1) {
+    if (semId == ERROR) {
         semId = initSem(name, value);
         if (semId == ERROR)
             return ERROR;
