@@ -12,7 +12,7 @@ int strncpy(char* dst, char* src, int max) {
   return i;
 }
 
-unsigned int s_strlen(char* s) {
+unsigned int strlen(char* s) {
     int len = 0;
     while (s[len++] != 0);
     return len - 1;
@@ -26,4 +26,25 @@ int strCmp(const char* s1, const char* s2) {
     if (s1[i] != 0) return 1;
     else if (s2[i] != 0) return -1;
     else return 0;
+}
+
+char* strcat(char* dest, const char* src) {
+    char* originalDest = dest;
+    
+    // Find the end of dest string
+    while (*dest != '\0') {
+        dest++;
+    }
+    
+    // Copy src to the end of dest
+    while (*src != '\0') {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+    
+    // Add null terminator
+    *dest = '\0';
+    
+    return originalDest;
 }

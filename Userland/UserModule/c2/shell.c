@@ -553,7 +553,7 @@ void commandTestSem(int argc, char *argv[]) {
   global = 0;
   int sem = sysCreateSemaphore("sem", 1);
   for (int i = 0; i < PROCESS_PAIRS; i++) {
-      pids[i] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvDec, semTestWorker);
+    pids[i] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvDec, semTestWorker);
     pids[i + PROCESS_PAIRS] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvInc, semTestWorker);
   }
 

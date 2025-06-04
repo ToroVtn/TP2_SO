@@ -107,7 +107,7 @@ int initSem(char *name, unsigned int init_value) {
     if (semArray[pos].sem==NULL){
         return ERROR;
     }
-   semArray[pos].sem->name = malloc(s_strlen(name) + 1);
+   semArray[pos].sem->name = malloc(strlen(name) + 1);
     if (semArray[pos].sem->name == NULL) {
         free(semArray[pos].sem);
         return ERROR;
