@@ -25,10 +25,11 @@ extern void* userModule;
 extern void switcherInterruption();
 
 PCB* getPCB(uint32_t pid);
-void exitProcessByPCB(PCB* pcb); 
+void exitProcessByPCB(PCB* pcb, int exitCode); 
 
 PCBList pcbList;
 PCBNode* idleProcPCBNode;
+PCB* processInForeground;
 
 PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
   PCB* pcb = malloc(sizeof(PCB));
@@ -176,6 +177,8 @@ void* initUserModuleProc() {
   char* argv[1] = {"init"};
   void* rsp = createProc(1, argv, userModule);
   nextPCB();
+  processInForeground = pcbList.current->pcb;
+  pcbList.current->pcb->parent = NULL;
   return rsp;
 }
 
@@ -184,8 +187,18 @@ uint32_t initUserProc(int argc, char* argv[], void* procRip) {
   return pid - 1;
 }
 
-void exitProcessByPCB(PCB* pcb) {
+void exitProcessByPCB(PCB* pcb, int exitCode) {
+  if (pcb->state == EXITED) {
+    return;
+  }
+  if (pcb->state == BLOCKED) {
+    pcb->state = STANDBY_FOR_EXIT;
+    return;
+  }
   pcb->state = EXITED;
+  if(pcb->pid == processInForeground->pid) {
+    processInForeground = pcb->parent;
+  }
   for (int i = 0; i < pcb->waitingPCBCount; ++i) {
     PCB* pcb2 = pcb->waitingPCBs[i];
     pcb2->state = READY;
@@ -194,13 +207,21 @@ void exitProcessByPCB(PCB* pcb) {
 }
 
 void exitProc(int exitCode) {
-  exitProcessByPCB(pcbList.current->pcb);
+  exitProcessByPCB(pcbList.current->pcb, KILL_CODE);
+  switcherInterruption(); // Switch to the next process
+}
+
+void killCurrentForegroundProcess(int code) {
+  exitProcessByPCB(processInForeground, code);
+  switcherInterruption(); // Switch to the next proces
 }
 
 PCB* getPCB(uint32_t pid) { // gets the pcb by using pid
   PCBNode* node = pcbList.head;
   do {
-    if (node->pcb->pid == pid) return node->pcb;
+    if (node->pcb->pid == pid) {
+      return node->pcb;
+    }
     node = node->next;
   } while (node->pcb->pid <= pid && node != pcbList.head);
   return NULL;
@@ -231,6 +252,7 @@ void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
   userlandPcb->rbp = kernelPcb->rbp;
   userlandPcb->state = stateNames[kernelPcb->state];
   userlandPcb->priority = kernelPcb->priority;
+  userlandPcb->location = (kernelPcb->pid == processInForeground->pid) ? "foreground" : "background";
 }
 userlandPCB* fetchPCBList(int* len) {
   *len = pcbList.len;
@@ -268,4 +290,18 @@ bool kill(uint32_t pid) {
   }
   exitProcessByPCB(pcb);
   return true;
+}
+
+void killCurrentProcessInForeground() {
+  if (processInForeground == 0) return;
+  exitProcessByPCB(processInForeground, KILL_CODE);
+  switcherInterruption(); // Switch to the next process
+}
+
+void changePriority(uint32_t pid, uint8_t newPriority) {
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL || pcb->state == EXITED) {
+    return;
+  }
+  pcb->priority = newPriority;
 }
