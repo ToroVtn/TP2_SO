@@ -81,16 +81,16 @@ sysWaitPid:
 sysPCBList:
   syscall 20
 sysCreateSemaphore:
-  syscall 20
-sysDestroySemaphore:
   syscall 21
-sysWaitSem:
+sysDestroySemaphore:
   syscall 22
-sysPostSem:
+sysWaitSem:
   syscall 23
-sysOpenSem:
+sysPostSem:
   syscall 24
-sysGetPid:
+sysOpenSem:
   syscall 25
-sysKill:
+sysGetPid:
   syscall 26
+sysKill:
+  syscall 27

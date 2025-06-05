@@ -532,7 +532,7 @@ void semTestWorker(uint64_t argc, char* argv[argc]) {
   } else {
     for (int i = 0; i < count; i++) racyInc(&global, inc);
   }
-  if (semToUse) sysDestroySemaphore("sem");
+  //if (semToUse) sysDestroySemaphore("sem");
   printf("Final value in process: %l\n", global);
   sysExit(SUCCESS);
 }
