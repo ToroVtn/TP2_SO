@@ -13,5 +13,4 @@ typedef struct SystemInfo {
 
 void getSysInfo(SystemInfo* si);
 
-
 #endif

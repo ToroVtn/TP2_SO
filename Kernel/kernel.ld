@@ -4,21 +4,21 @@ SECTIONS
 {
 	.text 0x100000 :
 	{
-		text = .;
+		kernelText = .;
 		*(.text*)
 		. = ALIGN(0x1000);
-		rodata = .;
+		kernelRodata = .;
 		*(.rodata*)
 	}
 	.data ALIGN(0x1000) :/* AT(ADDR(.data)) Por lo que investigué esto está al pedo...*/
 	{
-		data = .;
+		kernelData = .;
 		*(.data*)
 		endOfKernelBinary = .;
 	}
 	.bss ALIGN(0x1000) :/* AT(ADDR(.bss)) */
 	{
-		bss = .;
+		kernelBss = .;
 		*(.bss*)
 		*(EXCLUDE_FILE (*.o) COMMON)
 	}

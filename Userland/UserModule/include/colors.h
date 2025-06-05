@@ -21,8 +21,12 @@ extern RGBColor fillColor;
 extern RGBColor strokeColor;
 
 void setBgColor(uint32_t hexColor);
+uint32_t getBgColor();
 void setFontColor(uint32_t hexColor);
+uint32_t getFontColor();
 void setCursorColor(uint32_t hexColor);
+uint32_t getCursorColor();
+
 void setFillColor(uint32_t hexColor);
 void setStrokeColor(uint32_t hexColor);
 

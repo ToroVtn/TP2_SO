@@ -1,15 +1,12 @@
 section .data
 registersQuantity equ 17
 
-section .bss
-registers resq registersQuantity
-exceptionRegisters resq registersQuantity
+section .text
 
 global saveRegisters
-global getRegistersValues
-global getExceptionRegistersValues
 
-section .text
+extern getRegisterValues
+extern getExceptionRegisterValues
 
 ; paso los registros por stack
 ; el primer argumento es para ver en que array guardo los registros, 0 = exceptionRegisters, != 0 registers
@@ -21,18 +18,20 @@ saveRegisters:
     push rcx
     push rdx
 
-    lea rax, [rbp + 24]     ; guardo en rax la dirección del segundo argumento, es decir el rax pusheado anteriormente
-    xor rcx, rcx            ; seteo el contador en 0
-
-    cmp qword [rbp + 16], 0 ; veo en que array lo guardaré
-    jz .exception
-    jmp .noException
+    cmp qword [rbp + 16], 1 ; veo en que array lo guardaré
+    je .noException
 
 .exception:
-    mov rbx, exceptionRegisters
-    jmp .loop
+    call getExceptionRegisterValues
+    mov rbx, rax
+    jmp .getFirstReg
 .noException:
-    mov rbx, registers      ; guardo la dirección donde almacenaré los registros    
+    call getRegisterValues
+    mov rbx, rax      ; guardo la dirección donde almacenaré los registros    
+
+.getFirstReg:
+    lea rax, [rbp + 24]     ; guardo en rax la dirección del segundo argumento, es decir el rip pusheado anteriormente
+    xor rcx, rcx            ; seteo el contador en 0
 
 .loop:
     cmp cl, registersQuantity
@@ -52,28 +51,6 @@ saveRegisters:
     pop rcx
     pop rbx
     pop rax
-    mov rsp, rbp
-    pop rbp
-    ret
-
-; uint64_t * getRegistersValues()
-getRegistersValues:
-    push rbp
-    mov rbp, rsp
-
-    mov rax, registers
-
-    mov rsp, rbp
-    pop rbp
-    ret
-
-; uint64_t * getExceptionRegistersValues()
-getExceptionRegistersValues:
-    push rbp
-    mov rbp, rsp
-
-    mov rax, exceptionRegisters
-
     mov rsp, rbp
     pop rbp
     ret

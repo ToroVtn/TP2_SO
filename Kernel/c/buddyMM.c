@@ -11,7 +11,6 @@ typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 // 2^(ORDER_COUNT-1) bytes
 #define HEAP_SIZE (1 << (ORDER_COUNT - 1)) //64MB
 
-
 static const uint64_t addressByteSize = sizeof(void*);
 
 typedef struct Block {

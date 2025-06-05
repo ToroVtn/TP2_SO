@@ -61,7 +61,7 @@ void memoryInit(void * endOfModules){
 // }
 
 // void* malloc(uint64_t size) {
-//   PCB* pcb = getCurrentPCB();
+//   PCB* pcb = fetchCurrentPCB();
 //   return internalMalloc(size, pcb->freeListStart, pcb->freeListEnd, &(pcb->bytesAvailable));
 // }
 
@@ -116,7 +116,7 @@ void * malloc( size_t request ){
 
 // void free(void* ptr) {
 //   if (ptr == NULL) return;
-//   PCB* pcb = getCurrentPCB();
+//   PCB* pcb = fetchCurrentPCB();
 //   if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
 //   internalFree(ptr, pcb->freeListStart, pcb->freeListEnd, &(pcb->bytesAvailable));
 // }

@@ -3,13 +3,15 @@
 #include <sysinfo.h>
 
 // Por alguna razón sin esto gdb la flashea con la dirección de systemInfo ¯\_()_/¯
-const int asdf = 1;
+const int switcher = 1;
 
 SystemInfo systemInfo;
 
 void setFontGridValues() {
-  systemInfo.fontCols = systemInfo.screenWidth/(systemInfo.charWidth*systemInfo.fontSize + systemInfo.charSeparation);
-  systemInfo.fontRows = systemInfo.screenHeight/(systemInfo.charHeight*systemInfo.fontSize + systemInfo.charSeparation);
+  systemInfo.fontCols =
+      systemInfo.screenWidth / (systemInfo.charWidth * systemInfo.fontSize + systemInfo.charSeparation);
+  systemInfo.fontRows =
+      systemInfo.screenHeight / (systemInfo.charHeight * systemInfo.fontSize + systemInfo.charSeparation);
 }
 
 void getSysInfo() {

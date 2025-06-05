@@ -18,8 +18,8 @@ void strokeRectangle(int x, int y, int width, int height, int strokeWidth) {
 }
 
 void strokeRectangleOutward(int x, int y, int width, int height, int strokeWidth) {
-  strokeHorizontalLine(x - strokeWidth, y - strokeWidth, width + 2*strokeWidth, strokeWidth);
-  strokeHorizontalLine(x - strokeWidth, y + height, width + 2*strokeWidth, strokeWidth);
+  strokeHorizontalLine(x - strokeWidth, y - strokeWidth, width + 2 * strokeWidth, strokeWidth);
+  strokeHorizontalLine(x - strokeWidth, y + height, width + 2 * strokeWidth, strokeWidth);
   strokeVerticalLine(x - strokeWidth, y, height, strokeWidth);
   strokeVerticalLine(x + width, y, height, strokeWidth);
 }
