@@ -12,6 +12,7 @@ typedef struct {
   void* rsp;
   void* rbp;
   char name[MAX_NAME_LENGTH + 1];
+  char* location;
 } PCB;
 
 #endif

@@ -45,6 +45,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)getpid,
     (SyscallFunction)kill,
     (SyscallFunction)sleep,
+    (SyscallFunction)setPriority,
     (SyscallFunction)block,
     (SyscallFunction)unBlock,
 

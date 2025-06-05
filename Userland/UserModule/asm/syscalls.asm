@@ -30,7 +30,7 @@ global sysOpenSem
 global sysGetPid
 global sysKill
 global sysSleep
-global sysChangePriority
+global sysSetPriority
 global sysBlock
 global sysUnblock
 
@@ -100,7 +100,7 @@ sysKill:
   syscall 27
 sysSleep:
   syscall 28
-sysChangePriority:
+sysSetPriority:
   syscall 29
 sysBlock:
   syscall 30

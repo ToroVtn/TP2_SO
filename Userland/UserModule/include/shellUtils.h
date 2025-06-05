@@ -31,7 +31,8 @@ typedef enum {
 } ExitCode;
 static const char* const CommandResultStrings[] = {
     "Success",           "Too many arguments", "Argument too long",  "Command not found",
-    "Missing arguments", "Illegal argument",   "Argument of bounds",
+    "Missing arguments", "Illegal argument",   "Argument out of bounds", "Process failure",
+    "No memory available",
 };
 
 typedef void (*ShellFunction)(int argc, char* [argc]);

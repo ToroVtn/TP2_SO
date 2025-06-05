@@ -32,6 +32,7 @@ typedef struct {
   void* rsp;
   void* rbp;
   char name[MAX_NAME_LENGTH + 1];
+  char* location;
 } userlandPCB;
 
 
@@ -49,7 +50,7 @@ void readyProc(const PCB* pcb);
 uint32_t getpid();
 bool kill(uint32_t pid);
 void killCurrentForegroundProcess();
-void changePriority(uint32_t pid, uint8_t newPriority);
+void setPriority(uint32_t pid, uint8_t newPriority);
 void exitProcessByPCB(PCB* pcb, int exitCode);
 void block(uint32_t pid);
 void unBlock(uint32_t pid);

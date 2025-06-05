@@ -47,11 +47,12 @@ int shell() {
   addCommand("ps", "Print the current process list.", commandPs);
   addCommand("testMM", "Test the memory manager", commandTestMM);
   addCommand("testSem", "Test semaphore with multiple processes", commandTestSem);
-  addCommand("kill", "Kill a process by its PID", commandKill);
+  addCommand("kill", "Kill a process with the specified PID", commandKill);
+  addCommand("nice", "Changes the priority of a process with the specified pid", commandNice);
   addCommand("getpid", "Print pid for current process.", commandGetPid);
-  addCommand("loop", "Sends a message with its pid every second.", commandLoop);
-  addCommand("block", "Blocks the process with the pid given", commandBlock);
-  addCommand("unblock", "Unblocks the process with the pid given", commandBlock);
+  addCommand("loop", "Sends a message with its pid at a specific interval", commandLoop);
+  addCommand("block", "Blocks the process with the specified pid ", commandBlock);
+  addCommand("unblock", "Unblocks the process with the specified pid", commandBlock);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -486,10 +487,10 @@ void commandZeroDivisionError() {
 void commandPs() {
   int len;
   PCB* pcbList = sysPCBList(&len);
-  printf("%3s, %-10s, %-10s, %10s, %10s, %10s\n", "PID", "Name", "State", "rsp", "rbp", "Priority");
+  printf("%3s, %-10s, %-9s, %-9s, %10s, %10s, %8s\n", "PID", "Name", "State", "Location", "rsp", "rbp", "Priority");
   for (int i = 0; i < len; ++i) {
     PCB* pcb = pcbList + i;
-    printf("%3d, %-10s, %-10s, %p, %p, %10d\n", pcb->pid, pcb->name, pcb->state, pcb->rsp, pcb->rbp, pcb->priority);
+    printf("%3d, %-10s, %-9s, %-9s, %p, %p, %8d\n", pcb->pid, pcb->name, pcb->state, pcb->location, pcb->rsp, pcb->rbp, pcb->priority);
   }
   sysFree(pcbList);
   sysExit(SUCCESS);
@@ -601,24 +602,26 @@ void commandLoop(int argc, char* argv[argc]) {
   int secs = strToInt(argv[1]);
   while(1) {
     sysSleep(secs*1000);
-    printf("Hola! Soy el proceso: %d\n", sysGetPid());
+    printf("Process pid: %d\n", sysGetPid());
   }
   sysExit(PROCESS_FAILURE);
 }
 
 void commandNice(int argc, char* argv[argc]) {
+  printf("DEBUG: argc: %d\n", argc);
   if (argc < 3) {
     puts("Usage:");
     printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
     sysExit(MISSING_ARGUMENTS);
   }
+
   int newPriority = strToInt(argv[2]);
   if (newPriority <= 0 || newPriority >= 10) {
     puts("Usage:");
     printf("\t\tnice <pid> <priority between 1-9>\n", argv[0]);
     sysExit(ILLEGAL_ARGUMENT);
   }
-  sysChangePriority(strToInt(argv[1]), newPriority);
+  sysSetPriority(strToInt(argv[1]), newPriority);
   sysExit(SUCCESS);
 }
 
