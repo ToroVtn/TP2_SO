@@ -288,7 +288,7 @@ bool kill(uint32_t pid) {
   if (pcb == NULL || pcb->state == EXITED) {
     return false;
   }
-  exitProcessByPCB(pcb);
+  exitProcessByPCB(pcb, KILL_CODE);
   return true;
 }
 
