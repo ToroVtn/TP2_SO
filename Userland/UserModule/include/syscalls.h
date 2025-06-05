@@ -35,5 +35,9 @@ extern int sysPostSem(int semId);
 extern int sysOpenSem(char* name, int value);
 extern uint32_t sysGetPid();
 extern bool sysKill(uint32_t pid);
+extern void sysSleep(uint64_t ms);
+extern void sysChangePriority(uint32_t pid, uint32_t newPriority);
+extern void sysBlock(uint32_t pid);
+extern void sysUnBlock(uint32_t pid);
 
 #endif

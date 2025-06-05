@@ -204,6 +204,7 @@ void exitProcessByPCB(PCB* pcb, int exitCode) {
     pcb2->state = READY;
     pcb2->waitedProcCode = 1;
   }
+  switcherInterruption(); // Switch to the next process
 }
 
 void exitProc(int exitCode) {
@@ -304,4 +305,21 @@ void changePriority(uint32_t pid, uint8_t newPriority) {
     return;
   }
   pcb->priority = newPriority;
+}
+
+void block(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if(pcb != NULL){
+    if(pcb->pid == pcbList.current->pcb->pid){
+      blockProc();
+    }
+    pcb->state = BLOCKED;
+  }
+}
+
+void unBlock(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if(pcb != NULL){
+    pcb->state = READY;
+  }
 }

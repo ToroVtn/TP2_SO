@@ -49,6 +49,9 @@ int shell() {
   addCommand("testSem", "Test semaphore with multiple processes", commandTestSem);
   addCommand("kill", "Kill a process by its PID", commandKill);
   addCommand("getpid", "Print pid for current process.", commandGetPid);
+  addCommand("loop", "Sends a message with its pid every second.", commandLoop);
+  addCommand("block", "Blocks the process with the pid given", commandBlock);
+  addCommand("unblock", "Unblocks the process with the pid given", commandBlock);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -587,4 +590,56 @@ void commandKill(int argc, char* argv[argc]) {
     printf("Process with PID: %d was not found or has already exited\n", pid);
     sysExit(OUT_OF_BOUNDS);
   }
+}
+
+void commandLoop(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage:");
+    printf("\t\t%s <secs>\n", argv[0]);
+    sysExit(MISSING_ARGUMENTS);
+  }
+  int secs = strToInt(argv[1]);
+  while(1) {
+    sysSleep(secs*1000);
+    printf("Hola! Soy el proceso: %d\n", sysGetPid());
+  }
+  sysExit(PROCESS_FAILURE);
+}
+
+void commandNice(int argc, char* argv[argc]) {
+  if (argc < 3) {
+    puts("Usage:");
+    printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
+    sysExit(MISSING_ARGUMENTS);
+  }
+  int newPriority = strToInt(argv[2]);
+  if (newPriority <= 0 || newPriority >= 10) {
+    puts("Usage:");
+    printf("\t\tnice <pid> <priority between 1-9>\n", argv[0]);
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  sysChangePriority(strToInt(argv[1]), newPriority);
+  sysExit(SUCCESS);
+}
+
+void commandBlock(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage: block <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+
+  sysBlock(pid);
+  sysExit(SUCCESS);
+}
+
+void commandUnBlock(int argc, char* argv[argc]) {
+if (argc < 2) {
+    printf("Usage: unblock <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+
+  sysUnblock(pid);
+  sysExit(SUCCESS);
 }

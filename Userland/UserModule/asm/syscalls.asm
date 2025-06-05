@@ -29,6 +29,10 @@ global sysPostSem
 global sysOpenSem
 global sysGetPid
 global sysKill
+global sysSleep
+global sysChangePriority
+global sysBlock
+global sysUnblock
 
 
 
@@ -94,3 +98,11 @@ sysGetPid:
   syscall 26
 sysKill:
   syscall 27
+sysSleep:
+  syscall 28
+sysChangePriority:
+  syscall 29
+sysBlock:
+  syscall 30
+sysUnblock:
+  syscall 31

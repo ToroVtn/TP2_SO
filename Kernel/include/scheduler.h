@@ -40,6 +40,7 @@ void* schedule(void* rsp);
 uint32_t initUserProc(int argc, char* argv[], void* procRip);
 extern void exit(int exitCode);
 void startFirstProcess(void* procAddress);
+void exitProc(int exitCode);
 int waitPid(uint32_t pid);
 userlandPCB* fetchPCBList(int* len);
 const PCB* fetchCurrentPCB();
@@ -50,5 +51,7 @@ bool kill(uint32_t pid);
 void killCurrentForegroundProcess();
 void changePriority(uint32_t pid, uint8_t newPriority);
 void exitProcessByPCB(PCB* pcb, int exitCode);
+void block(uint32_t pid);
+void unBlock(uint32_t pid);
 
 #endif

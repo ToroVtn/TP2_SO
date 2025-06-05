@@ -26,6 +26,8 @@ typedef enum {
   MISSING_ARGUMENTS,
   ILLEGAL_ARGUMENT,
   OUT_OF_BOUNDS,
+  PROCESS_FAILURE,
+  NO_MEMORY_AVAILABLE,
 } ExitCode;
 static const char* const CommandResultStrings[] = {
     "Success",           "Too many arguments", "Argument too long",  "Command not found",
@@ -81,5 +83,9 @@ void commandTestSem();
 void commandChangeProcess();
 void commandKill(int argc, char* argv[argc]);
 void commandGetPid();
+void commandLoop(int argc, char* argv[argc]);
+void commandNice(int argc, char* argv[argc]);
+void commandBlock(int argc, char* argv[argc]);
+void commandUnBlock(int argc, char* argv[argc]);
 
 #endif

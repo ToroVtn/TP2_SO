@@ -34,7 +34,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)malloc,
     (SyscallFunction)free,
     (SyscallFunction)initUserProc,
-    (SyscallFunction)exit,
+    (SyscallFunction)exitProc,
     (SyscallFunction)waitPid,
     (SyscallFunction)fetchPCBList,
     (SyscallFunction)createSemaphore,
@@ -44,6 +44,10 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)openSemaphore,
     (SyscallFunction)getpid,
     (SyscallFunction)kill,
+    (SyscallFunction)sleep,
+    (SyscallFunction)block,
+    (SyscallFunction)unBlock,
+
 };
 
 SyscallFunction* getSyscallsArray() {
