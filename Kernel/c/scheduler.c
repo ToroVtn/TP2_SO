@@ -252,7 +252,7 @@ void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
   userlandPcb->rbp = kernelPcb->rbp;
   userlandPcb->state = stateNames[kernelPcb->state];
   userlandPcb->priority = kernelPcb->priority;
-  userlandPcb->location = (kernelPcb->pid == processInForeground->pid) ? "foreground" : "background";
+  //userlandPcb->location = (kernelPcb->pid == processInForeground->pid) ? "foreground" : "background";
 }
 userlandPCB* fetchPCBList(int* len) {
   *len = pcbList.len;

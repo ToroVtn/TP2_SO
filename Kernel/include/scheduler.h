@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <memory.h>
 
 #define MAX_NAME_LENGTH 60
 #define KILL_CODE 1
@@ -31,7 +32,6 @@ typedef struct {
   void* rsp;
   void* rbp;
   char name[MAX_NAME_LENGTH + 1];
-  char* location;
 } userlandPCB;
 
 

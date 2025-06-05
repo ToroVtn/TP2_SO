@@ -1,7 +1,7 @@
 #ifndef PIPES_H
 #define PIPES_H
 
-#include <stddef.h>
+#include <memory.h>
 #include <utils.h>
 
 #define BUFFER_SIZE 4096
