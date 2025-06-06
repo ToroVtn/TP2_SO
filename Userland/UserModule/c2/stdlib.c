@@ -39,7 +39,7 @@ void clearScreen() {
 void jumpLine() {
   int i = screenBufReadIdx;
   int length = 0;
-  while (/* i != screenBufWriteIdx --> this should always be the case &&  */
+  while (
          screenBuffer[i] != '\n' && length < systemInfo.fontCols
   ) {
     i = (i + 1) % SCREEN_BUFFER_SIZE;
@@ -52,8 +52,8 @@ void jumpLine() {
 
 void printScreenBuffer() {
   for (int i = screenBufReadIdx; i != screenBufWriteIdx; i = (i + 1) % SCREEN_BUFFER_SIZE) {
-    /* int endOfScreen = */ sysWriteCharNext(screenBuffer[i]);
-    // if (endOfScreen) jumpLine();
+    sysWriteCharNext(screenBuffer[i]);
+    
   }
 }
 
@@ -196,7 +196,7 @@ void printStringWithPadding(const char* s) {
   printStringWithAlignedPadding(s);
 }
 
-// Return 0 on successful print, non 0 on error.
+
 int printf(const char* fmt, ...) {
   va_list p;
   va_start(p, fmt);
@@ -314,16 +314,7 @@ int strToInt(char* s) {
 }
 
 void printKey(KeyStruct* key) {
-  // printf(
-  //   "{char: %c, code: %d, ctrl: %d, lShift: %d, rShift: %d, capsLock: %d, alt: %d}\n",
-  //   key->character,
-  //   key->code,
-  //   key->md.ctrlPressed,
-  //   key->md.leftShiftPressed,
-  //   key->md.rightShiftPressed,
-  //   key->md.capsLockActive,
-  //   key->md.altPressed
-  // );
+
   printf(
       "('%c' | %x)%s%s%s%s%s\n", key->character, key->code, key->md.ctrlPressed ? " + ctrl" : "",
       key->md.leftShiftPressed ? " + l-shift" : "", key->md.rightShiftPressed ? " + r-shift" : "",
@@ -337,19 +328,10 @@ void setSrand(unsigned int seed) {
 }
 // Return number between 0 and 1073741823 (0x3FFFFFFF).
 unsigned int rand() {
-  // Using Borland parameters from https://en.wikipedia.org/wiki/Linear_congruential_generator
-  // Seems to always alternate between even and odd numbers which kinda sucks but oh well...
+  
   return srand = ((22695477l * srand + 1) % (2l << 31)) & 0x3FFFFFFF;
 }
-// Apparently returning floating point values is not allowed, I get a compilation error.
-// double normalizedRand() {
-//   return (double)rand() / 0x3FFFFFFF;
-// }
-// unsigned int randBetween(int min, int max) {
-//   double nrand = normalizedRand();
-//   if (nrand >= 1.0) return max;
-//   else return (max - min + 1) * nrand + min;
-// }
+
 unsigned int randBetween(int min, int max) {
   return rand() % (max - min + 1) + min;
 }
@@ -385,7 +367,7 @@ char toLower(char c) {
 }
 
 long pow(int x, int n) {
-  // Habría que settear un errno o algo en realidad.
+  
   if (n < 0) return x;
   long res = 1;
   for (int i = 0; i < n; ++i) {

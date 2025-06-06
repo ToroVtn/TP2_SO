@@ -52,7 +52,7 @@ int shell() {
   addCommand("getpid", "Print pid for current process.", commandGetPid);
   addCommand("loop", "Sends a message with its pid at a specific interval", commandLoop);
   addCommand("block", "Blocks the process with the specified pid ", commandBlock);
-  addCommand("unblock", "Unblocks the process with the specified pid", commandBlock);
+  addCommand("unblock", "Unblocks the process with the specified pid", commandUnBlock);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -608,17 +608,15 @@ void commandLoop(int argc, char* argv[argc]) {
 }
 
 void commandNice(int argc, char* argv[argc]) {
-  printf("DEBUG: argc: %d\n", argc);
   if (argc < 3) {
     puts("Usage:");
     printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
     sysExit(MISSING_ARGUMENTS);
   }
-
   int newPriority = strToInt(argv[2]);
   if (newPriority <= 0 || newPriority >= 10) {
     puts("Usage:");
-    printf("\t\tnice <pid> <priority between 1-9>\n", argv[0]);
+    printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
     sysExit(ILLEGAL_ARGUMENT);
   }
   sysSetPriority(strToInt(argv[1]), newPriority);

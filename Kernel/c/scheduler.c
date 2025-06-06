@@ -186,6 +186,12 @@ void* initUserModuleProc() {
 
 uint32_t initUserProc(int argc, char* argv[], void* procRip) {
   createProc(argc, argv, procRip);
+  // Update foreground process to the newly created process
+  // This ensures that when a command is run from shell, it becomes the foreground process
+  PCB* newProcessPCB = getPCB(pid - 1);
+  if (newProcessPCB != NULL) {
+    processInForeground = newProcessPCB;
+  }
   return pid - 1;
 }
 
