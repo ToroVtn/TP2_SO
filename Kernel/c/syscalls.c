@@ -37,7 +37,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)exitProc,
     (SyscallFunction)waitPid,
     (SyscallFunction)fetchPCBList,
-    (SyscallFunction)createSemaphore,
+    (SyscallFunction)createSem,
     (SyscallFunction)destroySemaphore,
     (SyscallFunction)waitSemaphore,
     (SyscallFunction)postSemaphore,

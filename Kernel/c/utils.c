@@ -17,7 +17,7 @@ unsigned int strlen(char* s) {
     while (s[len++] != 0);
     return len - 1;
 }
-int strCmp(const char* s1, const char* s2) {
+int strcmp(const char* s1, const char* s2) {
     int i = 0;
     for (; s1[i] != 0 && s2[i] != 0; ++i) {
         if (s1[i] < s2[i]) return -1;

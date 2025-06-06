@@ -1,6 +1,7 @@
 //based on freeRTOS heap_4.c
 
-#include <memory.h>
+#include "memory.h"
+#include <stdint.h>
 
 #ifndef BUDDY
 
@@ -8,10 +9,10 @@
 
 #define BITS_PER_BYTE ( ( size_t ) 8 )
 
-typedef struct Block{
-    struct Block * nextFreeBlock; /**< The next free block in the list. */
-    size_t blockSize;                     /**< The size of the free block. */
-} Block;
+//typedef struct Block{
+//    struct Block * nextFreeBlock; /**< The next free block in the list. */
+//    size_t blockSize;                     /**< The size of the free block. */
+//} Block;
 
 static const size_t block_size = sizeof(Block);
 static const uint64_t addressByteSize = sizeof(void*);
@@ -135,6 +136,44 @@ void free( void * ptr ){
     }
 }
 
+//FUNCION PROVISORIA
+void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
+    // Case 1: ptr is NULL, behave like malloc
+    if( ptr == NULL ){
+        return malloc( newSize );
+    }
+    
+    // Case 2: newSize is 0, behave like free
+    if( newSize == 0 ){
+        free( ptr );
+        return NULL;
+    }
+    
+    // Case 3: oldSize equals newSize, return same pointer
+    if( oldSize == newSize ){
+        return ptr;
+    }
+    
+    // Case 4: Allocate new block and copy data
+    void * newPtr = malloc( newSize );
+    if( newPtr != NULL ){
+        // Copy data from old block to new block
+        // Copy the smaller of the two sizes
+        uint64_t copySize = (oldSize < newSize) ? oldSize : newSize;
+        
+        // Simple memory copy
+        uint8_t * src = (uint8_t *) ptr;
+        uint8_t * dst = (uint8_t *) newPtr;
+        for( uint64_t i = 0; i < copySize; i++ ){
+            dst[i] = src[i];
+        }
+        
+        // Free the old block
+        free( ptr );
+    }
+    
+    return newPtr;
+}
 void insertBlockIntoFreeList(Block * block){
     Block * blockIt;
     uint8_t * puc; // aux for adress pointer adition

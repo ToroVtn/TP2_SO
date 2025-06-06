@@ -3,50 +3,42 @@
 
 #include <memory.h>
 #include "semaphores.h"
-#include "scheduler.h"
-#include "utils.h"
+#include <scheduler.h>
+#include <utils.h>
+#include <stdbool.h>
 
-#define MAX_SEMAPHORES 50
+#define MAX_NAME_LENGTH 50
 
 
 extern int enterCritical(int *lock);
 extern int exitCritical(int *lock);
 
-typedef struct queuedProc{
+typedef struct PCBNodeSem{
     const PCB* procPCB;
-    struct queuedProc* next;
-    struct queuedProc* previous;
-}queuedProc;
+    struct PCBNodeSem* next;
+    struct PCBNodeSem* previous;
+}PCBNodeSem;
 
 typedef struct semaphore{
-    char* name;
     int value;
     int lock;
-    queuedProc * firstProc;
-    queuedProc * lastProc;
+    bool destroyed;
+    PCBNodeSem * pcbNodeHead;
+    PCBNodeSem * pcbNodeTail;
+    char* name[MAX_NAME_LENGTH + 1];
 } semaphore;
-
-typedef struct semSlot {
-    semaphore *sem;
-    int used;
-} semSlot;
-
 
 
 int findSem(char* name);
-int findSemSlot();
 
 int initSemArray();
-int initSem(char* name, unsigned int value);
-int semWait(int semId);
-int semPost(int semId);
-int openSem(char* name, int value);
-int closeSem(int semId);
+int initSem(unsigned int value);
 
-
-int createSemaphore(char* name, int value);
-int destroySemaphore(char* name);
-int postSemaphore(int semId);
-int waitSemaphore(int semId);
+int createSem(char* name, int value);
+bool destroySemaphore(int semId);
+bool destroySemaphoreByName(char* name);
+bool postSemaphore(int semId);
+bool waitSemaphore(int semId);
 int openSemaphore(char* name, int value);
+bool decSemOnlyForKernel(int semId);
 #endif //SEMPAPHORES_SEMAPHORE_H

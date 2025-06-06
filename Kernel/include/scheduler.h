@@ -5,11 +5,21 @@
 #include <stdbool.h>
 #include <memory.h>
 
-#define MAX_NAME_LENGTH 60
+#define MAX_NAME_LENGTH 50
 #define KILL_CODE 1
 
-typedef enum { READY, RUNNING, BLOCKED, EXITED, STANDBY_FOR_EXIT } State;
+typedef enum { READY, RUNNING, BLOCKED, EXITED, STANDBY_FOR_EXIT, USER_BLOCKED } State;
 extern const char* const stateNames[4];
+
+typedef struct {
+  int32_t write;
+  int32_t read;
+  int32_t err;
+} ProcessPipes;
+
+#define PROCESS_HEAP_ORDER_COUNT 17
+#define PROCESS_HEAP_SIZE (1 << (PROCESS_HEAP_ORDER_COUNT - 1))
+
 
 typedef struct PCB {
   uint32_t pid;
@@ -23,6 +33,16 @@ typedef struct PCB {
   struct PCB* parent;
   int waitingPCBCount;
   void* stack;
+  ProcessPipes pipes;
+  void* heap;
+  bool heapFreed;
+  /* #ifdef BUDDY
+  Block* freeList[PROCESS_HEAP_ORDER_COUNT];
+  #else
+  Block* freeListStart;
+  Block* freeListEnd;
+  uint64_t bytesAvailable;
+  #endif */
 } PCB;
 
 typedef struct {
@@ -39,6 +59,7 @@ typedef struct {
 void createPCBList();
 void* schedule(void* rsp);
 uint32_t initUserProc(int argc, char* argv[], void* procRip);
+int32_t initUserProcWithPipeSwap(int32_t argc, const char* argv[], void* processRip, ProcessPipes pipes);
 extern void exit(int exitCode);
 void startFirstProcess(void* procAddress);
 void exitProc(int exitCode);
@@ -51,8 +72,13 @@ uint32_t getpid();
 bool kill(uint32_t pid);
 void killCurrentForegroundProcess();
 void setPriority(uint32_t pid, uint8_t newPriority);
+void changePipeRead(int32_t p);
+void changePipeWrite(int32_t p);
+void blockByUser(uint32_t pid);
+ProcessPipes getPipes();
 void exitProcessByPCB(PCB* pcb, int exitCode);
 void block(uint32_t pid);
 void unBlock(uint32_t pid);
+void yield();
 
 #endif

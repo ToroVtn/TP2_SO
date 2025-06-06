@@ -17,7 +17,9 @@ typedef struct {
   int len;
 } PCBList;
 
-const char* const stateNames[4] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+const char* const stateNames[4] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
+
+#define IDLE_PID -1
 
 extern void* initStack(int argc, char* argv[], void* procRip, void* stackBase);
 extern void idleProc();

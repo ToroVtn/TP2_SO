@@ -13,11 +13,11 @@ typedef enum { LEFT = 'L', RIGHT = 'R' } blockAlignment;
 
 static const uint64_t addressByteSize = sizeof(void*);
 
-typedef struct Block {
+/* typedef struct Block {
     struct Block* next;
     uint32_t size;
     boolean isFree;
-} Block;
+} Block; */
 
 Block* freeList[ORDER_COUNT];
 void* heapStart;

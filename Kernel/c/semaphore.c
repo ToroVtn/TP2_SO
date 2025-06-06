@@ -1,191 +1,171 @@
 #include <semaphores.h>
+#include <arrayUtils.h>
 #include <scheduler.h>
 #include <utils.h>
 
 #define ERROR (-1)
+#define INITIAL_CAPACITY 20
 
-semSlot semArray[MAX_SEMAPHORES];
-int arraySize;
-
+uint32_t size;
+static Array semArray; //Arreglo de semáforos
+static Array freedPositions; //Arreglo de posiciones libres
 
 //chequea si encuentra el valor del semaforo dentro de mi arreglo
 
 int initSemArray(){
-    for (int i = 0; i < MAX_SEMAPHORES; ++i) {
-        semArray[i].used=0;
+    semArray = initArray(sizeof(semaphore), INITIAL_CAPACITY, NULL);
+    freedPositions = initArray(sizeof(int32_t), INITIAL_CAPACITY, NULL);
+}
+
+int addSem(char* name, uint32_t initialValue) {
+    semaphore sem;
+    sem.value = initialValue;
+    sem.lock = 0;
+    sem.pcbNodeHead = NULL;
+    sem.pcbNodeTail = NULL;
+    sem.destroyed = false;
+    int32_t i;
+    for (i = 0; i < MAX_NAME_LENGTH && name[i] != 0; ++i) {
+        sem.name[i] = name[i];
     }
-    arraySize = 0;
-    return 1;
+    if (name[i] != 0) return -1;
+    int32_t freeToUseSem;
+    if (popAndGetFromArray(freedPositions, &freeToUseSem)) {
+        setAtArrayIdx(semArray, freeToUseSem, &sem);
+        return freeToUseSem;
+    } else {
+        return pushToArray(semArray, &sem);
+  }
+}
+
+int initSem(unsigned int value) {
+    return addSem("", value);
 }
 
 int findSem(char *name) {
-    if(!arraySize) {
-        return ERROR; //No hay semáforos
+    int32_t len = arrayLen(semArray);
+  for (int32_t i = 0; i < len; ++i) {
+    semaphore* sem = getAtArrayIdx(semArray, i);
+    if (!sem->destroyed) {
+      if (strcmp(name, sem->name) == 0) return i;
     }
-    for (int i=0; i < MAX_SEMAPHORES; i++) {
-        if (semArray[i].used) {
-            if (strCmp(semArray[i].sem->name, name) == 0)
-                return i;
-        }
-    }
-    return ERROR;
-}
-
-//Devuelve una posicion para iniciar un nuevo semaforo, si falla retorna -1
-int findSemSlot() {
-    for (int i = 0; i < MAX_SEMAPHORES; i++) {
-        if (!semArray[i].used) {
-            return i;
-        }
-    }
-    return ERROR;
+  }
+  return -1;
 }
 
 
-int queue(int pos, const PCB* queuedProcess) {
-    queuedProc* process = malloc(sizeof(queuedProc));
-    if (process==NULL){
-        return ERROR;
-    }
-    process->procPCB = queuedProcess;
-    process->next = NULL;
-    process->previous = NULL;
-    if (semArray[pos].sem->firstProc == NULL) {
-        semArray[pos].sem->firstProc = process;
-        semArray[pos].sem->lastProc = process;
-    } else{
-        process->next=NULL;
-        process->previous=semArray[pos].sem->lastProc;
-        semArray[pos].sem->lastProc->next = process;
-        semArray[pos].sem->lastProc = process;
-    }
-    return 0;
-}
+int queue(int semId, const PCB* queuedProcess) {
+    semaphore* sem = getAtArrayIdx(semArray, semId);
+    if (sem == NULL) return false;
 
-
-const PCB* dequeue(int pos) {
-    if (semArray[pos].sem->firstProc == NULL)
-        return NULL;
-    const PCB* process = semArray[pos].sem->firstProc->procPCB;
-    queuedProc *temp = semArray[pos].sem->firstProc;
-    if (semArray[pos].sem->firstProc->next == NULL) {
-        semArray[pos].sem->firstProc = NULL;
-        semArray[pos].sem->lastProc = NULL;
+    PCBNodeSem* node = malloc(sizeof(PCBNodeSem));
+    if (node == NULL) return false;
+    node->procPCB = queuedProcess;
+    node->next = NULL;
+    if (sem->pcbNodeHead == NULL) {
+        sem->pcbNodeHead = node;
+        sem->pcbNodeTail = node;
     } else {
-        semArray[pos].sem->firstProc = semArray[pos].sem->firstProc->next;
-        semArray[pos].sem->firstProc->previous = NULL;
+        sem->pcbNodeTail->next = node;
+        sem->pcbNodeTail = node;
     }
-    free(temp);
-    return process;
+  return true;
 }
 
-int createSemaphore(char* name, int value ){
-    return initSem(name, value);
+
+const PCB* dequeue(int semId) {
+    semaphore* sem = getAtArrayIdx(semArray, semId);
+    if (sem == NULL || sem->pcbNodeHead == NULL) return NULL;
+    PCB* pcb = sem->pcbNodeHead->procPCB;
+    PCBNodeSem* temp = sem->pcbNodeHead;
+    sem->pcbNodeHead = sem->pcbNodeHead->next;
+    free(temp);
+    return pcb;
 }
-int destroySemaphore(char* name){
-    return closeSem(findSem(name));
+
+int createSem(char* name, int initialValue) {
+    if(findSem(name) >= 0) {
+        return ERROR; //El semáforo ya existe
+    }
+    return addSem(name, initialValue);
 }
-int postSemaphore(int semId){
-    return semPost(semId);
+bool destroySemaphore(int semId) {
+    if (semId < 0) return false;
+    semaphore* sem = getAtArrayIdx(semArray, semId);
+    if (sem == NULL || sem->destroyed) return false;
+    enterCritical(&sem->lock);
+    while (sem->pcbNodeHead != NULL) {
+        PCB* toReady = dequeue(semId);
+        exitCritical(&sem->lock);
+        if (toReady->state == BLOCKED) {
+        readyProc(toReady);
+        } else if (toReady->state == STANDBY_FOR_EXIT) {
+        exitProcessByPCB(toReady, KILL_CODE);
+        }
+    }
+    exitCritical(&sem->lock);
+    sem->destroyed = true;
+    pushToArray(freedPositions, &semId);
+    return true;
 }
-int waitSemaphore(int semId){
-    return semWait(semId);
+
+bool destroySemaphoreByName(char* name) {
+  return destroySemaphore(findSem(name));
+}
+
+bool postSemaphore(int semId){
+    if (semId < 0) return false;
+    semaphore* sem = getAtArrayIdx(semArray, semId);
+    if (sem == NULL || sem->destroyed) return false;
+    enterCritical(&sem->lock);
+
+    bool shouldLeave = false;
+    while (!shouldLeave) {
+        PCB* toReady = dequeue(semId);
+        if (toReady != NULL) {
+        if (toReady->state == BLOCKED) {
+            readyProc(toReady);
+            shouldLeave = true;
+        } else if (toReady->state == STANDBY_FOR_EXIT) {
+            exitProcessByPCB(toReady, KILL_CODE);
+        }
+        } else {
+        sem->value++;
+        shouldLeave = true;
+        }
+    }
+
+    exitCritical(&sem->lock);
+
+    return true;
+}
+
+bool waitSemaphore(int semId){
+    if (semId < 0) return false;
+    semaphore* sem = getAtArrayIdx(semArray, semId);
+    if (sem == NULL || sem->destroyed) return false;
+    enterCritical(&sem->lock);
+    if (sem->value > 0) {
+        sem->value--;
+        exitCritical(&sem->lock);
+    } else {
+        PCB* pcb = fetchCurrentPCB();
+        queue(semId, pcb);
+        exitCritical(&sem->lock);
+        blockProc();
+    }
+    return true;
+}
+
+bool decSemOnlyForKernel(int32_t semId) {
+  if (semId < 0) return false;
+  semaphore* sem = getAtArrayIdx(semArray, semId);
+  if (sem->value > 0) sem->value--;
+  return true;
 }
 
 int openSemaphore(char* name, int value) {
-    return openSem(name, value);
-}
-
-int initSem(char *name, unsigned int initialValue) {
-    if (findSem(name) != ERROR)
-        return ERROR;
-    int pos = findSemSlot();
-    if (pos == ERROR) {
-        return ERROR;
-    }
-    semArray[pos].sem = malloc(sizeof(semaphore));
-    if (semArray[pos].sem == NULL){
-        return ERROR;
-    }
-   semArray[pos].sem->name = malloc(strlen(name) + 1);
-    if (semArray[pos].sem->name == NULL) {
-        free(semArray[pos].sem);
-        return ERROR;
-    }
-    strcpy(semArray[pos].sem->name, name);
-    semArray[pos].sem->value = initialValue;
-    semArray[pos].sem->lock = 0;
-    semArray[pos].used = 1;
-    semArray[pos].sem->firstProc = NULL;
-    semArray[pos].sem->lastProc = NULL;
-    arraySize++;
-    return pos;
-}
-
-/*--------------------------------------------*/
-
-
-
-
-int openSem(char *name, int value) {
     int semId = findSem(name);
-    if (semId == ERROR) {
-        semId = initSem(name, value);
-        if (semId == ERROR)
-            return ERROR;
-    }
+    if (semId < 0) semId = addSem(name, value);
     return semId;
-}
-
-int closeSem(int semId) {
-    if (semId >= MAX_SEMAPHORES || semId < 0)
-        return ERROR;
-    enterCritical(&semArray[semId].sem->lock);
-    if(semArray[semId].sem->firstProc != NULL) {
-        //Si hay procesos esperando, no puedo eliminar el semaforo
-        return ERROR;
-    }
-    exitCritical(&semArray[semId].sem->lock);
-    free(semArray[semId].sem->name);
-    free(semArray[semId].sem);
-    semArray[semId].used = 0;
-    arraySize--;
-    return 0;
-}
-//Busca el semaforo, si no lo encuentra sale. Si lo encuentra le decrementa el valor (si es 0 lo manda a la cola del sem)
-//y le dice al scheduler que lo bloquee
-int semWait(int semId) {
-    if (semId>=MAX_SEMAPHORES || semId < 0 || !semArray[semId].used) {
-        return ERROR;
-    }
-    enterCritical(&semArray[semId].sem->lock);
-    if (semArray[semId].sem->value > 0) {
-        semArray[semId].sem->value--;
-        exitCritical(&semArray[semId].sem->lock);
-    }
-    //lo tengo que encolar porque tiene que ponerse a esperar
-    else {
-        const PCB* procPCB = fetchCurrentPCB();
-        queue(semId, procPCB);
-        exitCritical(&semArray[semId].sem->lock);
-        blockProc();
-    }
-    return 0;
-}
-//Busca el semaforo, si no lo encuentra sale. Si lo encuentra le aumenta el valor y se fija si hay algún elemento que se
-//necesite desencolar. Si hay alguno le dice al scheduler que lo pase a ready
-int semPost(int semId) {
-    if (semId>=MAX_SEMAPHORES || semId <0 || !semArray[semId].used) {
-        return ERROR;
-    }
-    enterCritical(&semArray[semId].sem->lock);
-    if (semArray[semId].sem->firstProc!=NULL) {
-        const PCB* to_ready=dequeue(semId);
-        exitCritical(&semArray[semId].sem->lock);
-        readyProc(to_ready);
-    }else {
-        semArray[semId].sem->value++;
-        exitCritical(&semArray[semId].sem->lock);
-    }
-    return 0;
 }

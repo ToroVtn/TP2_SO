@@ -1,164 +1,128 @@
-#include "pipes.h"
-#include "semaphore.h"
+//#include <array.h>
+#include <memory.h>
+#include <pipes.h>
+#include <semaphores.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <utils.h>
 
+#define INITIAL_CAPACITY 20
 
-#define MAX_PIPES 10
+static Array pipeArray;
+static Array freedPositions;
 
-
-int pipeCount;
-PipeSlot pipeArray[MAX_PIPES];
-
-//Chequea si el pipe es válido, devuelve 1 si no es válido, 0 si es válido
-int validPipe(int pipe) {
-    return (pipe < 0 || pipe >= MAX_PIPES || !pipeArray[pipe].available);
+void freePipe(Pipe** p) {
+  free(*p);
 }
+
+static Pipe stdinPipe;
+static Pipe stderrPipe;
 
 void initPipes() {
-    for (int i = 0; i < MAX_PIPES; i++) {
-        pipeArray[i].available = 0;
-    }
-    pipeCount = 0;
+  pipeArray = initArray(sizeof(Pipe*), INITIAL_CAPACITY, (ElementDestructor)freePipe);
+  freedPositions = initArray(sizeof(int32_t), INITIAL_CAPACITY, NULL);
+  // stdout --> Not used but I need to occupy this index anyways.
+  createPipe();
+  stdinPipe = **(Pipe**)getAtArrayIdx(pipeArray, createPipe());
+  stderrPipe = **(Pipe**)getAtArrayIdx(pipeArray, createPipe());
 }
 
-int findOpenSlot() {
-    if (pipeCount >= MAX_PIPES) {
-        return -1;
-    }
-    for (int i = 0; i < MAX_PIPES; ++i) {
-        if (!pipeArray[i].available) {
-            return i;
-        }
-    }
-    return -1;
+int64_t createPipe() {
+  Pipe* p = malloc(sizeof(Pipe));
+  p->mutex = initSem(1);
+  p->full = initSem(0);
+  p->empty = initSem(BUFFER_SIZE);
+  p->producingIndex = 0;
+  p->consumingIndex = 0;
+  p->deleted = false;
+  // p->readerPcb = NULL;
+  // p->writerPcb = NULL;
+  int32_t freeToUse;
+  if (popAndGetFromArray(freedPositions, &freeToUse)) {
+    // I could use get and save having to allocate a new pipe.
+    setAtArrayIdx(pipeArray, freeToUse, &p);
+    return freeToUse;
+  } else {
+    return pushToArray(pipeArray, &p);
+  }
 }
 
-int lookupPipe(const char* name) {
-    for (int i = 0; i < MAX_PIPES; i++) {
-        if (pipeArray[i].available && strCmp(pipeArray[i].pipe->name, name) == 0) {
-            return i;
-        }
-    }
-    return -1;
+Pipe* fetchPipe(int32_t pipeId) {
+  if (pipeId < 0) return NULL;
+  Pipe** pPtr = getAtArrayIdx(pipeArray, pipeId);
+  if (pPtr == NULL) return NULL;
+  Pipe* p = *pPtr;
+  if (p->deleted) return NULL;
+  return p;
 }
 
-// Add this helper function to create semaphore names safely
-char* createSemName(const char* prefix, const char* pipeName) {
-    int prefixLen = strlen(prefix);
-    int nameLen = strlen(pipeName);
-    char* semName = malloc(prefixLen + nameLen + 1);
-    
-    if (semName == NULL) return NULL;
-    
-    strcpy(semName, prefix);
-    strcat(semName, pipeName);
-    
-    return semName;
-}
-//Si no quiero asignar el proceso todavía le mando 0 y con el join lo puedo agregar
-int createPipe(char* name, int process_write, int process_read) {
-    if (process_write < 0 || process_read < 0) {
-        return -1;
-    }
-    if (lookupPipe(name) != -1) {
-        return -1;
-    }
-    int available_pipe = findOpenSlot();
-    if (available_pipe == -1) {
-        return -1;
-    }
-    pipeArray[available_pipe].available = 1;
-    pipeCount++;
-    pipeArray[available_pipe].pipe = malloc(sizeof(pipe));
-    if (pipeArray[available_pipe].pipe == NULL) {
-        pipeArray[available_pipe].available = 0;
-        pipeCount--;
-        return -1;
-    }
+int64_t readFromPipe(int32_t pipeId, char* buf, int32_t len) {
+  if (len <= 0) return 0;
+  Pipe* p = fetchPipe(pipeId);
+  if (p == NULL) return -1;
+  int64_t pos = 0;
+  bool reachedEnd = false;
+  do {
+    waitSemaphore(p->full);
+    waitSemaphore(p->mutex);
+    buf[pos++] = p->buffer[p->consumingIndex];
+    p->consumingIndex = (p->consumingIndex + 1) % BUFFER_SIZE;
+    if (p->consumingIndex == p->producingIndex) reachedEnd = true;
+    postSemaphore(p->mutex);
+    postSemaphore(p->empty);
+  } while (pos < len && !reachedEnd);
 
-    char* mutexName = createSemName("pipe_m_", name);
-    char* emptyName = createSemName("pipe_e_", name);
-    char* fullName = createSemName("pipe_f_", name);
-
-    pipeArray[available_pipe].pipe->mutex = initSem(mutexName, 1);
-    pipeArray[available_pipe].pipe->empty = initSem(emptyName, BUFFER_SIZE);
-    pipeArray[available_pipe].pipe->full = initSem(fullName, 0);
-    
-    /* strcpy(pipeArray[available_pipe].pipe->name, name);
-    pipeArray[available_pipe].pipe->producingIndex = 0;
-    pipeArray[available_pipe].pipe->consumingIndex = 0;
-    pipeArray[available_pipe].pipe->mutex = initSem(strcat("pipe_m_", name), 1);
-    pipeArray[available_pipe].pipe->empty = initSem(strcat("pipe_e_", name), BUFFER_SIZE);
-    pipeArray[available_pipe].pipe->full = initSem(strcat("pipe_f_", name), 0);
- */
-
-    pipeArray[available_pipe].pipe->read = process_read;
-    pipeArray[available_pipe].pipe->write = process_write;
-    return available_pipe;
+  return pos;
 }
 
-int attachToPipe(const char* pipe_name, int process_write, int process_read) {
-    int pipe_id = lookupPipe(pipe_name);
-    if (pipe_id == -1) {
-        return -1;
-    }
-    if (pipeArray[pipe_id].pipe->write == 0 && process_write > 0) {
-        pipeArray[pipe_id].pipe->write = process_write;
-    } else if (process_write != 0) {
-        return -1;
-    }
-    if (pipeArray[pipe_id].pipe->read == 0 && process_read > 0) {
-        pipeArray[pipe_id].pipe->read = process_read;
-    } else if (process_read != 0) {
-        return -1;
-    }
-    return 1;
+int64_t writeToPipe(int32_t pipeId, const char* buf, int32_t len) {
+  if (pipeId == STDIN) return -1;
+  if (len <= 0) return 0;
+  Pipe* p = fetchPipe(pipeId);
+  if (p == NULL) return -1;
+  int64_t pos = 0;
+  while (pos < len) {
+    waitSemaphore(p->empty);
+    waitSemaphore(p->mutex);
+    p->buffer[p->producingIndex] = buf[pos++];
+    p->producingIndex = (p->producingIndex + 1) % BUFFER_SIZE;
+    postSemaphore(p->mutex);
+    postSemaphore(p->full);
+  }
+  return pos;
 }
 
-int writeToPipe(int pipe, const char* info, int size) {
-    if (validPipe(pipe)) {
-        return -1;
-    }
-    if (pipeArray[pipe].pipe->write != 0 && pipeArray[pipe].pipe->read != 0) {
-        int pos = 0;
-        while (pos < size) {
-            semWait(pipeArray[pipe].pipe->empty);
-            semWait(pipeArray[pipe].pipe->mutex);
-            pipeArray[pipe].pipe->buffer[pipeArray[pipe].pipe->producingIndex] = info[pos++];
-            pipeArray[pipe].pipe->producingIndex = (pipeArray[pipe].pipe->producingIndex + 1) % BUFFER_SIZE;
-            semPost(pipeArray[pipe].pipe->mutex);
-            semPost(pipeArray[pipe].pipe->full);
-        }
-        return pos;
-    }
-    return -1;
+void writeStdin(char c) {
+  stdinPipe.buffer[stdinPipe.producingIndex] = c;
+  stdinPipe.producingIndex = (stdinPipe.producingIndex + 1) % BUFFER_SIZE;
+  postSemaphore(stdinPipe.full);
 }
 
-int readFromPipe(int pipe, char* info, int size) {
-    if (validPipe(pipe)) {
-        return -1;
-    }
-    if (pipeArray[pipe].pipe->write != 0 && pipeArray[pipe].pipe->read != 0) {
-        int pos = 0;
-        while (pos < size) {
-            semWait(pipeArray[pipe].pipe->full);
-            semWait(pipeArray[pipe].pipe->mutex);
-            info[pos++] = pipeArray[pipe].pipe->buffer[pipeArray[pipe].pipe->consumingIndex];
-            pipeArray[pipe].pipe->consumingIndex = (pipeArray[pipe].pipe->consumingIndex + 1) % BUFFER_SIZE;
-            semPost(pipeArray[pipe].pipe->mutex);
-            semPost(pipeArray[pipe].pipe->empty);
-        }
-        return pos;
-    }
-    return -1;
+int64_t readStdin(char* buf, int32_t len) {
+  if (len <= 0) return 0;
+  int64_t pos = 0;
+  bool reachedEnd = false;
+  do {
+    waitSemaphore(stdinPipe.full);
+    waitSemaphore(stdinPipe.mutex);
+    buf[pos++] = stdinPipe.buffer[stdinPipe.consumingIndex];
+    stdinPipe.consumingIndex = (stdinPipe.consumingIndex + 1) % BUFFER_SIZE;
+    if (stdinPipe.consumingIndex == stdinPipe.producingIndex) reachedEnd = true;
+    postSemaphore(stdinPipe.mutex);
+  } while (pos < len && !reachedEnd);
+
+  return pos;
 }
 
-int deletePipe(int pipe) {
-    if (validPipe(pipe)) {
-        return -1;
-    }
-    free(pipeArray[pipe].pipe->name);
-    free(pipeArray[pipe].pipe);
-    pipeArray[pipe].available = 0;
-    pipeCount--;
-    return 0;
+bool deletePipe(int32_t pipeId) {
+  if (0 <= pipeId && pipeId <= 2) return false;
+  Pipe* p = fetchPipe(pipeId);
+  if (p == NULL) return false;
+  p->deleted = true;
+  pushToArray(freedPositions, &pipeId);
+  destroySemaphore(p->mutex);
+  destroySemaphore(p->full);
+  destroySemaphore(p->empty);
+  // setAtArrayIdx will do the free of the pipe itself when it overrides this position.
+  return true;
 }
