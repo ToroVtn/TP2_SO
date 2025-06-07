@@ -12,6 +12,7 @@
 #include <syscalls.h>
 #include <sysinfo.h>
 #include <utils.h>
+#include <time.h>
 
 #define MAX_ARG_COUNT 30
 #define MAX_ARG_LEN 50
@@ -26,10 +27,13 @@ typedef enum {
   MISSING_ARGUMENTS,
   ILLEGAL_ARGUMENT,
   OUT_OF_BOUNDS,
+  PROCESS_FAILURE,
+  NO_MEMORY_AVAILABLE,
 } ExitCode;
 static const char* const CommandResultStrings[] = {
     "Success",           "Too many arguments", "Argument too long",  "Command not found",
-    "Missing arguments", "Illegal argument",   "Argument of bounds",
+    "Missing arguments", "Illegal argument",   "Argument out of bounds", "Process failure",
+    "No memory available",
 };
 
 typedef void (*ShellFunction)(int argc, char* [argc]);
@@ -75,5 +79,15 @@ void commandZeroDivisionError();
 void commandInvalidOpcodeError();
 void commandPs();
 void commandTestMM();
+void commandCreateSemaphore();
+void commandDestroySemaphore();
+void commandTestSem();
+void commandChangeProcess();
+void commandKill(int argc, char* argv[argc]);
+void commandGetPid();
+void commandLoop(int argc, char* argv[argc]);
+void commandNice(int argc, char* argv[argc]);
+void commandBlock(int argc, char* argv[argc]);
+void commandUnBlock(int argc, char* argv[argc]);
 
 #endif

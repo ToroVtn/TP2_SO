@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#define BUDDY // comment this to change to the other mm implementation
+// #define BUDDY // comment this to change to the other mm implementation
 
 #include <stdint.h>
 #include <stdio.h>
@@ -31,7 +31,8 @@ void listInit(void* heapStart, Block* listStart, Block** listEnd, size_t* freeBy
 void* malloc(size_t size);
 void* globalMalloc(size_t size);
 void free(void* ptr);
-void globalFree(void * ptr);
+void globalF
+void* realloc(void* ptr, uint64_t oldSize, uint64_t newSize);
 void memoryInit(void* heapStart);
 void allocateStack(void** rspStart, void** rspEnd);
 

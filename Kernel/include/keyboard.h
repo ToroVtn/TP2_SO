@@ -33,6 +33,7 @@ enum ModKeyCodes {
 extern uint8_t readKeyCode();
 void readKeyToBuffer();
 int readKbBuffer(KeyStruct buf[], int len);
+void getModKeys(ModifierKeys* dest);
 void setLayout(KbLayout layout);
 KbLayout getLayout();
 

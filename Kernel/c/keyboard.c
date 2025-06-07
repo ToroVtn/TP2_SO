@@ -2,6 +2,9 @@
 #include <layouts.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <pipes.h>
+
+#define EOF -1
 
 void copyModifierKeys(ModifierKeys src, ModifierKeys* dest);
 
@@ -27,7 +30,7 @@ static KeyStruct buffer[KB_BUF_SIZE];
 static ModifierKeys md = {false};
 void readKeyToBuffer() {
   uint8_t code = readKeyCode();
-  KeyStruct key;
+  char c;
   switch (code) {
   case LEFT_SHIFT:
     md.leftShiftPressed = true;
@@ -57,21 +60,22 @@ void readKeyToBuffer() {
     md.capsLockActive = !md.capsLockActive;
     break;
   default:
-    if (code < 0 || code >= LAYOUT_SIZE) return;
-    key.code = code;
+    if (code >= LAYOUT_SIZE) return;
     // This makes capslock virtually equivalent to shift, meaning all symbols will get
     // converted, not only letters. That's not the standard behaviour but I actually like it.
-    if ((md.capsLockActive && !(md.leftShiftPressed || md.rightShiftPressed)) ||
-        (!md.capsLockActive && (md.leftShiftPressed || md.rightShiftPressed)))
-      key.key = layoutShiftMaps[kbLayout][code];
-    else key.key = layoutMaps[kbLayout][code];
-    if (key.key == 0) return;
-    copyModifierKeys(md, &key.md);
-    int prevWriteIdx = writeIdx;
-    buffer[writeIdx++] = key;
-    writeIdx %= KB_BUF_SIZE;
-    if (readIdx == prevWriteIdx && canRead) readIdx = writeIdx;
-    canRead = true;
+    if (md.capsLockActive != (md.leftShiftPressed || md.rightShiftPressed)) 
+      c = layoutShiftMaps[kbLayout][code];
+    else c = layoutMaps[kbLayout][code];
+    if (c == 0) return;
+    if (md.ctrlPressed == true) {
+      if (c == 'C' || c == 'c') {
+        killForegroundProc();
+        return;
+      } else if (c == 'D' || c == 'd') {
+        c = EOF;
+      }
+    }
+    writeStdin(c);
   }
 }
 
@@ -91,4 +95,12 @@ int readKbBuffer(KeyStruct buf[], int len) {
     if (readIdx == writeIdx) canRead = false;
   }
   return i;
+}
+
+void getModKeys(ModifierKeys* dest) {
+  dest->leftShiftPressed = md.leftShiftPressed;
+  dest->rightShiftPressed = md.rightShiftPressed;
+  dest->ctrlPressed = md.ctrlPressed;
+  dest->altPressed = md.altPressed;
+  dest->capsLockActive = md.capsLockActive;
 }

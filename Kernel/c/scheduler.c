@@ -2,6 +2,7 @@
 #include <scheduler.h>
 #include <stdbool.h>
 #include <utils.h>
+#include <pipes.h>
 
 
 typedef struct PCBNode {
@@ -13,18 +14,26 @@ typedef struct {
   PCBNode* head;
   PCBNode* tail;
   PCBNode* current;
-  PCBNode* previous;
+  PCBNode* previous; 
   int len;
 } PCBList;
 
-const char* const stateNames[4] = {"READY", "RUNNING", "BLOCKED", "EXITED"};
+const char* const stateNames[5] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
+
+#define IDLE_PID -1
 
 extern void* initStack(int argc, char* argv[], void* procRip, void* stackBase);
 extern void idleProc();
 extern void* userModule;
+extern void switcherInterruption();
+
+
+PCB* getPCB(uint32_t pid);
+void exitProcessByPCB(PCB* pcb, int exitCode); 
 
 PCBList pcbList;
 PCBNode* idleProcPCBNode;
+PCB* processInForeground;
 
 PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
   PCB* pcb = globalMalloc(sizeof(PCB));
@@ -56,6 +65,10 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
     }
     listInit(pcb->heap, pcb->listStart, &(pcb->listEnd), &(pcb->freeBytes));
   #endif
+
+  pcb->pipes.read = STDIN;
+  pcb->pipes.write = STDOUT;
+  pcb->pipes.err = STDERR;
 
   return pcb;
 }
@@ -158,9 +171,10 @@ void* schedule(void* rsp) {
   } else if (pcbList.current->pcb->state == RUNNING) {
     pcbList.current->pcb->state = READY;
   }
-
+  if(pcbList.current == idleProcPCBNode) {
+    nextPCB();
+  }
   PCBNode* targetNode = pcbList.current;
-  
   nextPCB();
   while (true) {
     if (pcbList.current->pcb->state == READY) {
@@ -199,47 +213,76 @@ void* initUserModuleProc() {
   char* argv[1] = {"init"};
   void* rsp = createProc(1, argv, userModule);
   nextPCB();
+  processInForeground = pcbList.current->pcb;
+  pcbList.current->pcb->parent = NULL;
   return rsp;
 }
 
 uint32_t initUserProc(int argc, char* argv[], void* procRip) {
   createProc(argc, argv, procRip);
+  // Update foreground process to the newly created process
+  // This ensures that when a command is run from shell, it becomes the foreground process
+  PCB* newProcessPCB = getPCB(pid - 1);
+  if (newProcessPCB != NULL) {
+    processInForeground = newProcessPCB;
+  }
   return pid - 1;
 }
 
-void exitProc(int exitCode) {
-  pcbList.current->pcb->state = EXITED;
-  for (int i = 0; i < pcbList.current->pcb->waitingPCBCount; ++i) {
-    PCB* pcb = pcbList.current->pcb->waitingPCBs[i];
-    pcb->state = READY;
-    pcb->waitedProcCode = exitCode;
+void exitProcessByPCB(PCB* pcb, int exitCode) {
+  if (pcb->state == EXITED) {
+    return;
   }
+  if (pcb->state == BLOCKED) {
+    pcb->state = STANDBY_FOR_EXIT;
+    return;
+  }
+  pcb->state = EXITED;
+  if(pcb->pid == processInForeground->pid) {
+    processInForeground = pcb->parent;
+  }
+  for (int i = 0; i < pcb->waitingPCBCount; ++i) {
+    PCB* pcb2 = pcb->waitingPCBs[i];
+    pcb2->state = READY;
+    pcb2->waitedProcCode = 1;
+  }
+  switcherInterruption(); // Switch to the next process
 }
 
-extern void switcherInterruption();
+void exitProc(int exitCode) {
+  exitProcessByPCB(pcbList.current->pcb, KILL_CODE);
+  switcherInterruption(); // Switch to the next process
+}
 
-int waitPid(uint32_t pid) {
-  if(pid == pcbList.current->pcb->pid) {
-    return pcbList.current->pcb->waitedProcCode; 
-  }
+
+PCB* getPCB(uint32_t pid) { // gets the pcb by using pid
   PCBNode* node = pcbList.head;
-  
-  while (node->pcb->pid <= pid) {
-    if (node->pcb->pid == pid && node->pcb->state != EXITED) {
-      node->pcb->waitingPCBs[node->pcb->waitingPCBCount++] = pcbList.current->pcb;
-      pcbList.current->pcb->state = BLOCKED;
-      switcherInterruption(); 
-      return pcbList.current->pcb->waitedProcCode;
+  do {
+    if (node->pcb->pid == pid) {
+      return node->pcb;
     }
     node = node->next;
-    if(node == pcbList.head) {
-     
-      break;
-    }
+  } while (node->pcb->pid <= pid && node != pcbList.head);
+  return NULL;
+}
+
+int waitPid(uint32_t pid) {
+  if (pid == pcbList.current->pcb->pid) {
+    return pcbList.current->pcb->waitedProcCode;
   }
-  
+
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL || pcb->state == EXITED) {
+    return pcbList.current->pcb->waitedProcCode;
+  }
+  pcb->waitingPCBs[pcb->waitingPCBCount++] = pcbList.current->pcb;
+  pcbList.current->pcb->state = BLOCKED;
+  switcherInterruption(); 
   return pcbList.current->pcb->waitedProcCode;
 }
+
+
+
 
 void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
   strcpy(userlandPcb->name, kernelPcb->name);
@@ -248,6 +291,7 @@ void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
   userlandPcb->rbp = kernelPcb->rbp;
   userlandPcb->state = stateNames[kernelPcb->state];
   userlandPcb->priority = kernelPcb->priority;
+  userlandPcb->location = (kernelPcb->pid == processInForeground->pid) ? "foreground" : "background";
 }
 userlandPCB* fetchPCBList(int* len) {
   *len = pcbList.len;
@@ -272,4 +316,80 @@ void blockProc() {
 
 void readyProc(PCB* pcb) {
   ((PCB*)pcb)->state = READY;
+}
+
+uint32_t getpid() {
+  return pcbList.current->pcb->pid;
+}
+
+bool kill(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL || pcb->state == EXITED) {
+    return false;
+  }
+  exitProcessByPCB(pcb, KILL_CODE);
+  return true;
+}
+
+void killForegroundProc() {
+  if (processInForeground == 0) return;
+  exitProcessByPCB(processInForeground, KILL_CODE);
+  switcherInterruption(); // Switch to the next process
+}
+
+void setPriority(uint32_t pid, uint8_t newPriority) {
+  PCB* pcb = getPCB(pid);
+  if(pcb != NULL){
+    pcb->priority = newPriority;
+  }
+}
+
+void block(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if(pcb != NULL){
+    if(pcb->pid == pcbList.current->pcb->pid){
+      blockProc();
+    }
+    pcb->state = BLOCKED;
+  }
+}
+
+void unBlock(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if(pcb != NULL){
+    pcb->state = READY;
+  }
+}
+
+
+void changePipeRead(int32_t pipe) {
+  pcbList.current->pcb->pipes.read = pipe;
+}
+
+void changePipeWrite(int32_t pipe) {
+  pcbList.current->pcb->pipes.write = pipe;
+}
+
+ProcessPipes fetchPipes() {
+  return pcbList.current->pcb->pipes;
+}
+
+int64_t read(int32_t pipeId, char* buf, int32_t len) {
+  if (pipeId == STDIN)  {
+    return readStdin(buf, len);
+  }
+  return readFromPipe(pipeId, buf, len);
+}
+
+int64_t write(int32_t pipeId, const char* buf, int32_t len) {
+  if (pipeId == STDOUT) {
+    printNextBuf(buf, len);
+    return len;
+  }
+  return writeToPipe(pipeId, buf, len);
+}
+
+void yield() {
+  pcbList.current->pcb->state = READY;
+  switcherInterruption();
 }

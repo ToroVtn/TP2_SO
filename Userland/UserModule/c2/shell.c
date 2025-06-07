@@ -1,5 +1,6 @@
 #include <shellUtils.h>
 
+
 extern uint8_t bss;
 
 // Circular buffer. Stores just the command indexes in the global screenBuffer.
@@ -19,6 +20,11 @@ int currentCommandIdx = 0;
 
 static int commandReturnCode = 0;
 
+int64_t global;
+#define SEM_NAME "sem"
+#define PROCESS_PAIRS 2
+
+
 int shell() {
   setShellColors(0xC0CAF5, 0x1A1B26, 0xFFFF11);
   clearScreen();
@@ -36,10 +42,17 @@ int shell() {
       "getRegisters", "Get the values of the saved registers. \n    Available flags: --help", commandGetRegisters
   );
   addCommand("snake", "Play snake.", commandSnake);
-  addCommand("zeroDivisionError", "Test the zero division error", commandZeroDivisionError);
-  addCommand("invalidOpcodeError", "Test the invalid opcode error", commandInvalidOpcodeError);
+  addCommand("zeroDivisionError", "Test zero division error", commandZeroDivisionError);
+  addCommand("invalidOpcodeError", "Test invalid opcode error", commandInvalidOpcodeError);
   addCommand("ps", "Print the current process list.", commandPs);
   addCommand("testMM", "Test the memory manager", commandTestMM);
+  addCommand("testSem", "Test semaphore with multiple processes", commandTestSem);
+  addCommand("kill", "Kill a process with the specified PID", commandKill);
+  addCommand("nice", "Changes the priority of a process with the specified pid", commandNice);
+  addCommand("getpid", "Print pid for current process.", commandGetPid);
+  addCommand("loop", "Sends a message with its pid at a specific interval", commandLoop);
+  addCommand("block", "Blocks the process with the specified pid ", commandBlock);
+  addCommand("unblock", "Unblocks the process with the specified pid", commandUnBlock);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
@@ -220,9 +233,6 @@ void autocomplete() {
 }
 
 ExitCode parseCommand() {
-  // MAX_ARG_COUNT is large enough for me to ignore the error of the user going
-  // over it. It's a pain to take it into account. If it has to be done I'd rather
-  // make a dynamic sized array.
   char* argv[MAX_ARG_COUNT];
   int argc = 0, len = 0;
   int i = currentCommandIdx;
@@ -254,9 +264,7 @@ ExitCode parseCommand() {
   } while (c != '\n');
 
   if (argv[0][0] == 0) return SUCCESS;
-  // It's inefficient checking if the command is valid after parsing all the arguments.
-  // But doing it right after parsing the first word was annoying because there're two
-  // cases: `command arg1 ...\n` and `command\n`
+  
   command = getCommand(argv[0]);
   if (command == NULL) {
     printf("%s: %s\n", CommandResultStrings[COMMAND_NOT_FOUND], argv[0]);
@@ -319,7 +327,7 @@ void commandGetKeyInfo() {
   sysExit(SUCCESS);
 }
 
-// argc aka rdi is arriving as 0 for some reason.
+
 void commandRand(int argc, char* argv[argc]) {
   static bool randInitialized = false;
   if (!randInitialized) {
@@ -468,8 +476,7 @@ void commandSnake(int argc, char* argv[argc]) {
   sysExit(SUCCESS);
 }
 void commandZeroDivisionError() {
-  // Always set srand because after the exception the modules starts anew
-  // and srand is zero again.
+  
   setSrand(sysGetTicks());
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiv-by-zero"
@@ -480,10 +487,10 @@ void commandZeroDivisionError() {
 void commandPs() {
   int len;
   PCB* pcbList = sysPCBList(&len);
-  printf("%3s, %-10s, %-10s, %10s, %10s, %10s\n", "PID", "Name", "State", "rsp", "rbp", "Priority");
+  printf("%3s, %-10s, %-9s, %-9s, %10s, %10s, %8s\n", "PID", "Name", "State", "Location", "rsp", "rbp", "Priority");
   for (int i = 0; i < len; ++i) {
     PCB* pcb = pcbList + i;
-    printf("%3d, %-10s, %-10s, %p, %p, %10d\n", pcb->pid, pcb->name, pcb->state, pcb->rsp, pcb->rbp, pcb->priority);
+    printf("%3d, %-10s, %-9s, %-9s, %p, %p, %8d\n", pcb->pid, pcb->name, pcb->state, pcb->location, pcb->rsp, pcb->rbp, pcb->priority);
   }
   sysFree(pcbList);
   sysExit(SUCCESS);
@@ -492,5 +499,148 @@ void commandPs() {
 
 void commandTestMM(){
   testMM();
+  sysExit(SUCCESS);
+}
+
+void racyInc(int64_t* p, int64_t inc) {
+  int64_t aux = *p;
+  commandChangeProcess(); 
+  aux += inc;
+  *p = aux;
+}
+
+void semTestWorker(uint64_t argc, char* argv[argc]) {
+  if (argc != 4) {
+    sysExit(SUCCESS);
+  }
+
+  int count = strToInt(argv[1]);
+  int inc = strToInt(argv[2]);
+  int semToUse = strToInt(argv[3]);
+
+  if (count <= 0 || inc == 0 || semToUse < 0) {
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+
+  if (semToUse) {
+    int sem = sysOpenSem("sem", 1);
+    if (sem < 0) {
+      printf("semTestWorker: ERROR opening semaphore\n");
+      sysExit(MISSING_ARGUMENTS);
+    }
+    for (int i = 0; i < count; i++) {
+      sysWaitSem(sem);
+      racyInc(&global, inc);
+      sysPostSem(sem);
+    }
+  } else {
+    for (int i = 0; i < count; i++) racyInc(&global, inc);
+  }
+  //if (semToUse) sysDestroySemaphore("sem");
+  printf("Final value in process: %l\n", global);
+  sysExit(SUCCESS);
+}
+
+
+void commandTestSem(int argc, char *argv[]) {  
+  if (argc != 3){
+    printf("Usage: %s <count> <sem>\n", argv[0]);
+    printf("\tcount: number of iterations for each process\n");
+    printf("\tsem: 0 for no semaphores, not 0 to use semaphores\n");
+    sysExit(MISSING_ARGUMENTS);
+  }
+    
+  uint64_t pids[2 * PROCESS_PAIRS];
+  char *argvDec[] = {"semTestWorker", argv[1], "-1", argv[2]};
+  char *argvInc[] = {"semTestWorker", argv[1], "1", argv[2]};
+
+  global = 0;
+ // printf("Creating sem)");
+  int sem = sysCreateSemaphore("sem", 1);
+  printf("sem int: %d\n", sem);
+  for (int i = 0; i < PROCESS_PAIRS; i++) {
+    pids[i] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvDec, semTestWorker);
+    pids[i + PROCESS_PAIRS] = sysCreateProcess(sizeof(argvDec) / sizeof(argvDec[0]), argvInc, semTestWorker);
+  }
+
+  for (int i = 0; i < PROCESS_PAIRS; i++) {
+      sysWaitPid(pids[i]);
+      sysWaitPid(pids[i + PROCESS_PAIRS]);
+  }
+
+  printf("Final value: %d\n", global);
+  sysDestroySemaphore("sem");
+  sysExit(SUCCESS);
+}
+
+void commandGetPid() {
+  printf("PID for current process: %d\n", sysGetPid());
+  sysExit(SUCCESS);
+}
+
+void commandKill(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage: kill <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+  if (sysKill(pid)) {
+    sysExit(SUCCESS);
+  }
+  else {
+    printf("Process with PID: %d was not found or has already exited\n", pid);
+    sysExit(OUT_OF_BOUNDS);
+  }
+}
+
+void commandLoop(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage:");
+    printf("\t\t%s <secs>\n", argv[0]);
+    sysExit(MISSING_ARGUMENTS);
+  }
+  int secs = strToInt(argv[1]);
+  while(1) {
+    sysSleep(secs*1000);
+    printf("Process pid: %d\n", sysGetPid());
+  }
+  sysExit(PROCESS_FAILURE);
+}
+
+void commandNice(int argc, char* argv[argc]) {
+  if (argc < 3) {
+    puts("Usage:");
+    printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
+    sysExit(MISSING_ARGUMENTS);
+  }
+  int newPriority = strToInt(argv[2]);
+  if (newPriority <= 0 || newPriority >= 10) {
+    puts("Usage:");
+    printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  sysSetPriority(strToInt(argv[1]), newPriority);
+  sysExit(SUCCESS);
+}
+
+void commandBlock(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    printf("Usage: block <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+
+  sysBlockByUser(pid);
+  sysExit(SUCCESS);
+}
+
+void commandUnBlock(int argc, char* argv[argc]) {
+if (argc < 2) {
+    printf("Usage: unblock <pid>\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  int pid = strToInt(argv[1]);
+
+  sysUnblock(pid);
   sysExit(SUCCESS);
 }

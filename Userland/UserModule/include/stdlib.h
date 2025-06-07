@@ -4,6 +4,7 @@
 #include <float.h>
 #include <keyboard.h>
 #include <stdint.h>
+#include <pipes.h>
 
 #define NULL (void*)0
 #define EOF -1
@@ -21,9 +22,9 @@ extern char screenBuffer[SCREEN_BUFFER_SIZE];
 extern int screenBufWriteIdx;
 extern int screenBufReadIdx;
 
-int getKey(KeyStruct* key);
+bool getKey(KeyStruct* key);
 char getChar();
-void printChar(char c);
+int32_t printChar(char c);
 void clearScreen();
 void repaint();
 void printString(const char* s);

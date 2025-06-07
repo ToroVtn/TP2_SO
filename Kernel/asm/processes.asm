@@ -3,7 +3,6 @@
 
 global initStack
 global idleProc
-global exit
 global initUserModule
 
 extern allocateStack
@@ -58,16 +57,6 @@ idleProc:
   hlt
   jmp idleProc
 
-; -------------------------     FUNCTION     ----------------------------
-; Description: Exit from process. Process stack and pcb will get cleared.
-;              Then call timer tick interruption.
-; Arguments
-;  rdi: exit code (not currently used)
-; Return: doesn't return
-; -----------------------------------------------------------------------
-exit:
-  call exitProc
-  int 0x22
 
 ; -------------------------     FUNCTION     ----------------------------
 ; Description: Create usermodule process. Not trivial as I need to circunvent

@@ -10,6 +10,8 @@ typedef struct {
   uint8_t red;
 } RGBColor;
 
+void initializeFrameBuffer();
+
 void printPixel(int x, int y, RGBColor color);
 void fillRectangle(int x, int y, int width, int height, RGBColor color);
 
@@ -42,5 +44,6 @@ int cursorPrev();
 void printCursor();
 void eraseCursor();
 void clearScreen();
+void scrollScreen();
 
 #endif

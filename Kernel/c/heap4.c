@@ -2,6 +2,8 @@
 
 #include <memory.h>
 #include <scheduler.h>
+#include <stdint.h>
+
 
 #ifndef BUDDY
 
@@ -59,6 +61,7 @@ void memoryInit(void* endOfModules){
 }
 
 void * internalMalloc( size_t request, Block * listStart, Block * listEnd, size_t * freeBytes ){
+
     if (request <= 0) return NULL;
 
     Block * block;
@@ -109,7 +112,6 @@ void* malloc(size_t size) {
     PCB* pcb = fetchCurrentPCB();
     return internalMalloc(size, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
 }
-  
 
 void internalFree( void* ptr, Block* listStart, Block* listEnd, size_t* freeBytes ){
     if( ptr == NULL ) return;
@@ -134,6 +136,34 @@ void free(void* ptr) {
   PCB* pcb = fetchCurrentPCB();
   if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
   internalFree(ptr, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
+}
+
+//FUNCION PROVISORIA
+void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
+    if( ptr == NULL ){
+        return NULL;
+    }
+    
+    if( newSize == 0 ){
+        free( ptr );
+        return NULL;
+    }
+    
+    if( oldSize == newSize ){
+        return ptr;
+    }
+    
+    void * newPtr = malloc( newSize );
+
+    if(newPtr == NULL){
+        return NULL;
+    }
+    
+    uint64_t copySize = (oldSize < newSize) ? oldSize : newSize;        
+    newPtr = memcpy(newPtr, ptr, copySize);
+    free( ptr );
+    
+    return newPtr;
 }
 
 void insertBlockIntoFreeList(Block * block){
