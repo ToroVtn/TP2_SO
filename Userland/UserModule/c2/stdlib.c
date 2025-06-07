@@ -68,7 +68,20 @@ void repaint() {
 
 int32_t printChar(char c) {
   Pipe pipes = sysFetchPipes();
-  return sysWrite(pipes.write, &c, 1);
+  
+  // Handle backspace specially
+  if (c == '\b') {
+    // Remove character from screen buffer
+    decWriteIdx();
+    // Send backspace to output
+    return sysWrite(pipes.write, &c, 1);
+  } else {
+    // Add character to screen buffer
+    screenBuffer[screenBufWriteIdx] = c;
+    incWriteIdx();
+    // Send character to output
+    return sysWrite(pipes.write, &c, 1);
+  }
 }
 
 void printString(const char* s) {

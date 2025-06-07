@@ -45,4 +45,6 @@ extern Pipe sysFetchPipes();
 extern int sysReadFromPipe(int pipe, char* info, int size);
 extern int sysWriteToPipe(int pipe, const char* info, int size);
 extern int32_t sysGetModKeys(ModifierKeys* dest);
+extern void sysYield();
+extern int sysReadKbBuffer(KeyStruct* buf, int len);
 #endif

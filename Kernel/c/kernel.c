@@ -52,7 +52,7 @@ int main() {
   setFontGridValues();
   createPCBList();
   initSemArray();
-
+  initPipes();
   // userModule();
   initUserModule();
 

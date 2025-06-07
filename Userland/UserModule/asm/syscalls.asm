@@ -7,6 +7,7 @@ global sysSetLayout
 global sysSetFontSize
 global sysSetColor
 global sysGetModKeys
+global sysReadKbBuffer
 global sysWriteCharXY
 global sysWriteCharNext
 global sysMoveCursor
@@ -63,6 +64,8 @@ sysSetColor:
   syscall 5
 sysGetModKeys:
   syscall 6
+;sysReadKbBuffer:
+;  syscall 7
 sysWriteCharXY:
   syscall 7
 sysWriteCharNext:
@@ -92,40 +95,40 @@ sysWaitPid:
 sysPCBList:
   syscall 20
 sysCreateSemaphore:
-  syscall 20
-sysDestroySemaphore:
   syscall 21
-sysWaitSem:
+sysDestroySemaphore:
   syscall 22
-sysPostSem:
+sysWaitSem:
   syscall 23
-sysOpenSem:
+sysPostSem:
   syscall 24
-sysGetPid:
+sysOpenSem:
   syscall 25
-sysKill:
+sysGetPid:
   syscall 26
-sysSleep:
+sysKill:
   syscall 27
-sysSetPriority:
+sysSleep:
   syscall 28
-sysPipeInit:
+sysSetPriority:
   syscall 29
-sysDestroyPipe:
+sysPipeInit:
   syscall 30
-sysChangePipeRead:
+sysDestroyPipe:
   syscall 31
-sysChangePipeWrite:
+sysChangePipeRead:
   syscall 32
-sysFetchPipes:
+sysChangePipeWrite:
   syscall 33
-sysRead:
+sysFetchPipes:
   syscall 34
-sysWrite:
+sysRead:
   syscall 35
-sysBlockByUser:
+sysWrite:
   syscall 36
-sysUnblock:
+sysBlockByUser:
   syscall 37
-sysYield:
+sysUnblock:
   syscall 38
+sysYield:
+  syscall 39

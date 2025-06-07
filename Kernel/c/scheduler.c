@@ -46,6 +46,10 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
   // pcb->exitCode = 0;
   pcb->waitingPCBCount = 0;
 
+  pcb->pipes.read = STDIN;
+  pcb->pipes.write = STDOUT;
+  pcb->pipes.err = STDERR;
+
   return pcb;
 }
 

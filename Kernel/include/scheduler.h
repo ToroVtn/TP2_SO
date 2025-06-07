@@ -82,6 +82,5 @@ void unBlock(uint32_t pid);
 void yield();
 int64_t read(int32_t pipeId, char* buf, int32_t len);
 int64_t write(int32_t pipeId, const char* buf, int32_t len);
-void yield();
 
 #endif

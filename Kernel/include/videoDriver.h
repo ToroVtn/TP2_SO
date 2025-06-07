@@ -44,5 +44,6 @@ int cursorPrev();
 void printCursor();
 void eraseCursor();
 void clearScreen();
+void scrollScreen();
 
 #endif
