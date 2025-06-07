@@ -18,4 +18,11 @@ typedef struct {
   ModifierKeys md;
 } KeyStruct;
 
+enum ModKeyCodes {
+  CAPS_LOCK = 0x3A,
+  LEFT_SHIFT = 0x2A,
+  RIGHT_SHIFT = 0x36,
+  CTRL = 0x1D,
+  ALT = 0x38,
+};
 #endif

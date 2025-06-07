@@ -9,7 +9,7 @@
 #define KILL_CODE 1
 
 typedef enum { READY, RUNNING, BLOCKED, EXITED, STANDBY_FOR_EXIT, USER_BLOCKED } State;
-extern const char* const stateNames[4];
+extern const char* const stateNames[5];
 
 typedef struct {
   int32_t write;
@@ -75,10 +75,13 @@ void setPriority(uint32_t pid, uint8_t newPriority);
 void changePipeRead(int32_t p);
 void changePipeWrite(int32_t p);
 void blockByUser(uint32_t pid);
-ProcessPipes getPipes();
+ProcessPipes fetchPipes();
 void exitProcessByPCB(PCB* pcb, int exitCode);
 void block(uint32_t pid);
 void unBlock(uint32_t pid);
+void yield();
+int64_t read(int32_t pipeId, char* buf, int32_t len);
+int64_t write(int32_t pipeId, const char* buf, int32_t len);
 void yield();
 
 #endif

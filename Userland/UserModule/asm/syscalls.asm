@@ -6,6 +6,7 @@ global sysInfo
 global sysSetLayout
 global sysSetFontSize
 global sysSetColor
+global sysGetModKeys
 global sysRead
 global sysWrite
 global sysWriteCharXY
@@ -29,10 +30,6 @@ global sysPostSem
 global sysOpenSem
 global sysGetPid
 global sysKill
-global sysSleep
-global sysSetPriority
-global sysBlock
-global sysUnblock
 
 
 
@@ -85,12 +82,14 @@ sysWaitPid:
 sysPCBList:
   syscall 20
 sysCreateSemaphore:
-  syscall 21
+  syscall 20
 sysDestroySemaphore:
-  syscall 22
+  syscall 21
 sysWaitSem:
-  syscall 23
+  syscall 22
 sysPostSem:
+  syscall 23
+sysOpenSem:
   syscall 24
 sysOpenSem:
   syscall 25
@@ -102,7 +101,23 @@ sysSleep:
   syscall 28
 sysSetPriority:
   syscall 29
-sysBlock:
+sysPipeInit:
   syscall 30
-sysUnblock:
+sysDestroyPipe:
   syscall 31
+sysChangePipeRead:
+  syscall 32
+sysChangePipeWrite:
+  syscall 33
+sysFetchPipes:
+  syscall 34
+sysRead:
+  syscall 35
+sysWrite:
+  syscall 36
+sysBlockByUser:
+  syscall 37
+sysUnblock:
+  syscall 38
+sysYield:
+  syscall 39

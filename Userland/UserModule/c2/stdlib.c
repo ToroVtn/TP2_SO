@@ -5,16 +5,20 @@
 #include <syscalls.h>
 #include <sysinfo.h>
 
-int getKey(KeyStruct* key) {
-  int read = sysRead(key, 1);
-  return (read == 0) ? EOF : read;
+bool getKey(KeyStruct* key) {
+  Pipe pipes = sysFetchPipes();
+  sysRead(pipes.read, &key->character, 1);
+  sysGetModKeys(&key->md);
+  return (int)key->character != EOF;
 }
 
 char getChar() {
-  KeyStruct key;
-  int read = getKey(&key);
-  if (read == 0) return EOF;
-  else return key.character;
+  Pipe pipes = sysFetchPipes();
+  char c;
+  if (sysRead(pipes.read, &c, 1) < 0) {
+    return EOF;
+  }
+  return c;
 }
 
 char screenBuffer[SCREEN_BUFFER_SIZE];
@@ -62,15 +66,9 @@ void repaint() {
   printScreenBuffer();
 }
 
-void printChar(char c) {
-  int endOfScreen = sysWriteCharNext(c);
-  if (c == '\b') {
-    decWriteIdx();
-  } else {
-    screenBuffer[screenBufWriteIdx] = c;
-    incWriteIdx();
-  }
-  if (endOfScreen) jumpLine();
+int32_t printChar(char c) {
+  Pipe pipes = sysFetchPipes();
+  return sysWrite(pipes.write, &c, 1);
 }
 
 void printString(const char* s) {

@@ -2,6 +2,7 @@
 #include <scheduler.h>
 #include <stdbool.h>
 #include <utils.h>
+#include <pipes.h>
 
 
 typedef struct PCBNode {
@@ -13,11 +14,11 @@ typedef struct {
   PCBNode* head;
   PCBNode* tail;
   PCBNode* current;
-  PCBNode* previous;
+  PCBNode* previous; 
   int len;
 } PCBList;
 
-const char* const stateNames[4] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
+const char* const stateNames[5] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
 
 #define IDLE_PID -1
 
@@ -325,4 +326,37 @@ void unBlock(uint32_t pid) {
   if(pcb != NULL){
     pcb->state = READY;
   }
+}
+
+
+void changePipeRead(int32_t pipe) {
+  pcbList.current->pcb->pipes.read = pipe;
+}
+
+void changePipeWrite(int32_t pipe) {
+  pcbList.current->pcb->pipes.write = pipe;
+}
+
+ProcessPipes fetchPipes() {
+  return pcbList.current->pcb->pipes;
+}
+
+int64_t read(int32_t pipeId, char* buf, int32_t len) {
+  if (pipeId == STDIN)  {
+    return readStdin(buf, len);
+  }
+  return readFromPipe(pipeId, buf, len);
+}
+
+int64_t write(int32_t pipeId, const char* buf, int32_t len) {
+  if (pipeId == STDOUT) {
+    printNextBuf(buf, len);
+    return len;
+  }
+  return writeToPipe(pipeId, buf, len);
+}
+
+void yield() {
+  pcbList.current->pcb->state = READY;
+  switcherInterruption();
 }

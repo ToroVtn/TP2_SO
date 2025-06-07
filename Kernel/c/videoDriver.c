@@ -166,6 +166,12 @@ void printNextString(const char* str) {
   }
 }
 
+void printNextBuf(const char* buf, uint32_t len) {
+  for (int32_t i = 0; i < len; i++) {
+    printNextChar(buf[i]);
+  }
+}
+
 void printNextBase(uint64_t value, uint32_t base) {
   char buffer[getScreenWidth()];
   uintToBase(value, buffer, base);

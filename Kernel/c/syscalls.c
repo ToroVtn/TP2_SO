@@ -10,6 +10,7 @@
 #include <timer.h>
 #include <videoDriver.h>
 #include <semaphores.h>
+#include <pipes.h>
 
 /*
  * There should be stdin, stdout and stderr global variables and read/write syscalls that get/set them.
@@ -22,6 +23,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)setLayout,
     (SyscallFunction)setFontSize,
     (SyscallFunction)setColor,
+    (SyscallFunction)getModKeys,
     (SyscallFunction)readKbBuffer,
     (SyscallFunction)printCharXY,
     (SyscallFunction)printNextChar,
@@ -46,8 +48,16 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)kill,
     (SyscallFunction)sleep,
     (SyscallFunction)setPriority,
+    (SyscallFunction)createPipe,
+    (SyscallFunction)deletePipe,
+    (SyscallFunction)changePipeRead,
+    (SyscallFunction)changePipeWrite,
+    (SyscallFunction)fetchPipes,
+    (SyscallFunction)read,
+    (SyscallFunction)write,
     (SyscallFunction)block,
     (SyscallFunction)unBlock,
+    (SyscallFunction)yield
 
 };
 

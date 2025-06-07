@@ -13,15 +13,15 @@
 #define STDERR 2
 
 typedef struct {
-    char buffer[BUFFER_SIZE];
-    int producingIndex;
-    int consumingIndex;
-    int mutex;
-    int empty;
-    int full;
-    bool deleted;
-    //int read;
-    //int write;
+  char buffer[BUFFER_SIZE];
+  int32_t producingIndex;
+  int32_t consumingIndex;
+  int mutex;
+  int empty;
+  int full;
+  bool deleted;
+  // PCB* readerPcb;
+  // PCB* writerPcb;
 } Pipe;
 
 //Setea todas las posiciones del array como no usadas e inicializa size en 0;

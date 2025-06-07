@@ -92,3 +92,11 @@ int readKbBuffer(KeyStruct buf[], int len) {
   }
   return i;
 }
+
+void getModKeys(ModifierKeys* dest) {
+  dest->leftShiftPressed = md.leftShiftPressed;
+  dest->rightShiftPressed = md.rightShiftPressed;
+  dest->ctrlPressed = md.ctrlPressed;
+  dest->altPressed = md.altPressed;
+  dest->capsLockActive = md.capsLockActive;
+}

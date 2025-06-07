@@ -630,7 +630,7 @@ void commandBlock(int argc, char* argv[argc]) {
   }
   int pid = strToInt(argv[1]);
 
-  sysBlock(pid);
+  sysBlockByUser(pid);
   sysExit(SUCCESS);
 }
 

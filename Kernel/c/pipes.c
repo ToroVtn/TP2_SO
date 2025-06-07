@@ -1,6 +1,6 @@
 //#include <array.h>
 #include <memory.h>
-#include <pipes.h>
+#include "../include/pipes.h"
 #include <semaphores.h>
 #include <stdbool.h>
 #include <stdint.h>
