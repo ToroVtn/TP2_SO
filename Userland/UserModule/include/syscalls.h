@@ -6,6 +6,7 @@
 #include <sysinfo.h>
 #include <processes.h>
 #include <pipes.h>
+#include <time.h>
 
 extern void sysHalt();
 extern int sysGetTicks();

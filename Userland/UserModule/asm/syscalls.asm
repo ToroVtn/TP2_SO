@@ -7,8 +7,6 @@ global sysSetLayout
 global sysSetFontSize
 global sysSetColor
 global sysGetModKeys
-global sysRead
-global sysWrite
 global sysWriteCharXY
 global sysWriteCharNext
 global sysMoveCursor
@@ -30,6 +28,18 @@ global sysPostSem
 global sysOpenSem
 global sysGetPid
 global sysKill
+global sysSleep
+global sysSetPriority
+global sysPipeInit
+global sysDestroyPipe
+global sysChangePipeRead
+global sysChangePipeWrite
+global sysFetchPipes
+global sysRead
+global sysWrite
+global sysBlockByUser
+global sysUnblock
+global sysYield
 
 
 
@@ -51,7 +61,7 @@ sysSetFontSize:
   syscall 4
 sysSetColor:
   syscall 5
-sysRead:
+sysGetModKeys:
   syscall 6
 sysWriteCharXY:
   syscall 7
@@ -91,33 +101,31 @@ sysPostSem:
   syscall 23
 sysOpenSem:
   syscall 24
-sysOpenSem:
-  syscall 25
 sysGetPid:
-  syscall 26
+  syscall 25
 sysKill:
-  syscall 27
+  syscall 26
 sysSleep:
-  syscall 28
+  syscall 27
 sysSetPriority:
-  syscall 29
+  syscall 28
 sysPipeInit:
-  syscall 30
+  syscall 29
 sysDestroyPipe:
-  syscall 31
+  syscall 30
 sysChangePipeRead:
-  syscall 32
+  syscall 31
 sysChangePipeWrite:
-  syscall 33
+  syscall 32
 sysFetchPipes:
-  syscall 34
+  syscall 33
 sysRead:
-  syscall 35
+  syscall 34
 sysWrite:
-  syscall 36
+  syscall 35
 sysBlockByUser:
-  syscall 37
+  syscall 36
 sysUnblock:
-  syscall 38
+  syscall 37
 sysYield:
-  syscall 39
+  syscall 38

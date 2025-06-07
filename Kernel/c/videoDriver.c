@@ -81,6 +81,11 @@ int getCharSeparation() {
   return charSeparation;
 }
 
+static RGBColor* framebuffer;
+void initializeFrameBuffer() {
+  framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
+}
+
 void printPixel(int x, int y, RGBColor color) {
   RGBColor* framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
   uint64_t offset = x + (y * VBE_mode_info->pitch / (VBE_mode_info->bpp / 8));
