@@ -138,39 +138,28 @@ void free( void * ptr ){
 
 //FUNCION PROVISORIA
 void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
-    // Case 1: ptr is NULL, behave like malloc
     if( ptr == NULL ){
-        return malloc( newSize );
+        return NULL;
     }
     
-    // Case 2: newSize is 0, behave like free
     if( newSize == 0 ){
         free( ptr );
         return NULL;
     }
     
-    // Case 3: oldSize equals newSize, return same pointer
     if( oldSize == newSize ){
         return ptr;
     }
     
-    // Case 4: Allocate new block and copy data
     void * newPtr = malloc( newSize );
-    if( newPtr != NULL ){
-        // Copy data from old block to new block
-        // Copy the smaller of the two sizes
-        uint64_t copySize = (oldSize < newSize) ? oldSize : newSize;
-        
-        // Simple memory copy
-        uint8_t * src = (uint8_t *) ptr;
-        uint8_t * dst = (uint8_t *) newPtr;
-        for( uint64_t i = 0; i < copySize; i++ ){
-            dst[i] = src[i];
-        }
-        
-        // Free the old block
-        free( ptr );
+
+    if(newPtr == NULL){
+        return NULL;
     }
+    
+    uint64_t copySize = (oldSize < newSize) ? oldSize : newSize;        
+    newPtr = memcpy(newPtr, ptr, copySize);
+    free( ptr );
     
     return newPtr;
 }
