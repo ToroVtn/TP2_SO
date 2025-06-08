@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <videoDriver.h>
 #include <scheduler.h>
-#include <semaphore.h>
+#include <semaphores.h>
 
 // extern uint8_t kernelText;
 // extern uint8_t kernelRodata;

@@ -1,10 +1,10 @@
-#ifndef SEMPAPHORES_SEMAPHORE_H
-#define SEMPAPHORES_SEMAPHORE_H
+#ifndef SEMPAPHORES_H
+#define SEMPAPHORES_H
 
 #include <memory.h>
-#include "semaphores.h"
-#include "scheduler.h"
-#include "utils.h"
+#include <semaphores.h>
+#include <scheduler.h>
+#include <utils.h>
 
 #define MAX_SEMAPHORES 50
 
@@ -13,7 +13,7 @@ extern int enterCritical(int *lock);
 extern int exitCritical(int *lock);
 
 typedef struct queuedProc{
-    const PCB* procPCB;
+    PCB* procPCB;
     struct queuedProc* next;
     struct queuedProc* previous;
 }queuedProc;
@@ -49,4 +49,4 @@ int destroySemaphore(char* name);
 int postSemaphore(int semId);
 int waitSemaphore(int semId);
 int openSemaphore(char* name, int value);
-#endif //SEMPAPHORES_SEMAPHORE_H
+#endif

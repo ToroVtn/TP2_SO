@@ -1,10 +1,10 @@
 #include <utils.h>
 
-int strcpy(char* dst, char* src) {
+int strcpy(char* dst, const char* src) {
   return strncpy(dst, src, 0);
 }
 
-int strncpy(char* dst, char* src, int max) {
+int strncpy(char* dst, const char* src, int max) {
   int i = 0;
   if (max > 0) for (; i < max && src[i] != 0; ++i) dst[i] = src[i];
   else for (; src[i] != 0; ++i) dst[i] = src[i];
@@ -12,7 +12,7 @@ int strncpy(char* dst, char* src, int max) {
   return i;
 }
 
-unsigned int strlen(char* s) {
+unsigned int strlen(const char* s) {
     int len = 0;
     while (s[len++] != 0);
     return len - 1;

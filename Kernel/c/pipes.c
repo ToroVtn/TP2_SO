@@ -1,5 +1,6 @@
-#include "pipes.h"
-#include "semaphore.h"
+#include <pipes.h>
+#include <semaphores.h>
+#include <memory.h>
 
 
 #define MAX_PIPES 10
@@ -45,7 +46,7 @@ int lookupPipe(const char* name) {
 char* createSemName(const char* prefix, const char* pipeName) {
     int prefixLen = strlen(prefix);
     int nameLen = strlen(pipeName);
-    char* semName = malloc(prefixLen + nameLen + 1);
+    char* semName = globalMalloc(prefixLen + nameLen + 1);
     
     if (semName == NULL) return NULL;
     
@@ -68,7 +69,7 @@ int createPipe(char* name, int process_write, int process_read) {
     }
     pipeArray[available_pipe].available = 1;
     pipeCount++;
-    pipeArray[available_pipe].pipe = malloc(sizeof(pipe));
+    pipeArray[available_pipe].pipe = globalMalloc(sizeof(pipe));
     if (pipeArray[available_pipe].pipe == NULL) {
         pipeArray[available_pipe].available = 0;
         pipeCount--;
@@ -156,8 +157,8 @@ int deletePipe(int pipe) {
     if (validPipe(pipe)) {
         return -1;
     }
-    free(pipeArray[pipe].pipe->name);
-    free(pipeArray[pipe].pipe);
+    globalFree(pipeArray[pipe].pipe->name);
+    globalFree(pipeArray[pipe].pipe);
     pipeArray[pipe].available = 0;
     pipeCount--;
     return 0;

@@ -35,4 +35,7 @@ void globalFree(void * ptr);
 void memoryInit(void* heapStart);
 void allocateStack(void** rspStart, void** rspEnd);
 
+void getMemState();
+void getGlobalMemState();
+
 #endif

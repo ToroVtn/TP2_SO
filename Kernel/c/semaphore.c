@@ -42,7 +42,7 @@ int findSemSlot() {
 }
 
 
-int queue(int pos, const PCB* queuedProcess) {
+int queue(int pos, PCB* queuedProcess) {
     queuedProc* process = malloc(sizeof(queuedProc));
     if (process==NULL){
         return ERROR;
@@ -63,10 +63,10 @@ int queue(int pos, const PCB* queuedProcess) {
 }
 
 
-const PCB* dequeue(int pos) {
+PCB* dequeue(int pos) {
     if (semArray[pos].sem->firstProc == NULL)
         return NULL;
-    const PCB* process = semArray[pos].sem->firstProc->procPCB;
+    PCB* process = semArray[pos].sem->firstProc->procPCB;
     queuedProc *temp = semArray[pos].sem->firstProc;
     if (semArray[pos].sem->firstProc->next == NULL) {
         semArray[pos].sem->firstProc = NULL;
@@ -165,7 +165,7 @@ int semWait(int semId) {
     }
     //lo tengo que encolar porque tiene que ponerse a esperar
     else {
-        const PCB* procPCB = fetchCurrentPCB();
+        PCB* procPCB = fetchCurrentPCB();
         queue(semId, procPCB);
         exitCritical(&semArray[semId].sem->lock);
         blockProc();
@@ -180,7 +180,7 @@ int semPost(int semId) {
     }
     enterCritical(&semArray[semId].sem->lock);
     if (semArray[semId].sem->firstProc!=NULL) {
-        const PCB* to_ready=dequeue(semId);
+        PCB* to_ready=dequeue(semId);
         exitCritical(&semArray[semId].sem->lock);
         readyProc(to_ready);
     }else {
