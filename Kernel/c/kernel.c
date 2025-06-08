@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <videoDriver.h>
 #include <scheduler.h>
+#include <semaphore.h>
 
 // extern uint8_t kernelText;
 // extern uint8_t kernelRodata;
@@ -50,6 +51,7 @@ int main() {
   loadIdt();
   setFontGridValues();
   createPCBList();
+  initSemArray();
 
   // userModule();
   initUserModule();

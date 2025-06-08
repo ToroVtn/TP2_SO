@@ -76,5 +76,11 @@ void commandZeroDivisionError();
 void commandInvalidOpcodeError();
 void commandPs();
 void commandTestMM();
+void commandCreateSemaphore();
+void commandDestroySemaphore();
+void commandTestSem();
+void commandChangeProcess();
+void commandKill(int argc, char* argv[argc]);
+void commandGetPid();
 
 #endif

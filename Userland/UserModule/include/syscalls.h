@@ -28,5 +28,12 @@ extern uint32_t sysCreateProcess(int argc, char* argv[], void* procRip);
 extern void sysExit(int exitCode);
 extern int sysWaitPid(uint32_t pid);
 extern PCB* sysPCBList(int* len);
+extern int sysCreateSemaphore(char* name, int value);
+extern int sysDestroySemaphore(char* name);
+extern int sysWaitSem(int semId);
+extern int sysPostSem(int semId);
+extern int sysOpenSem(char* name, int value);
+extern uint32_t sysGetPid();
+extern bool sysKill(uint32_t pid);
 
 #endif
