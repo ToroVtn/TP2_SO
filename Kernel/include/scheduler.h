@@ -57,7 +57,7 @@ int waitPid(uint32_t pid);
 userlandPCB* fetchPCBList(int* len);
 PCB* fetchCurrentPCB();
 void blockProc();
-void readyProc(const PCB* pcb);
+void readyProc(PCB* pcb);
 uint32_t getpid();
 bool kill(uint32_t pid);
 void killCurrentForegroundProcess();
