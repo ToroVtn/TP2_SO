@@ -5,6 +5,8 @@
 #include <syscalls.h>
 #include <sysinfo.h>
 
+
+
 bool getKey(KeyStruct* key) {
   Pipe pipes = sysFetchPipes();
   sysRead(pipes.read, &key->character, 1);

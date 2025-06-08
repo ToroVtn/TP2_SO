@@ -11,9 +11,10 @@
 #include <videoDriver.h>
 #include <semaphores.h>
 #include <pipes.h>
+#include <lib.h>
 
 /*
- * There should be stdin, stdout and stderr global variables and read/write syscalls that get/set them.
+ * There should be stdin, STDOUT and stderr global variables and read/write syscalls that get/set them.
  */
 
 static SyscallFunction syscalls[] = {
@@ -36,6 +37,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)malloc,
     (SyscallFunction)free,
     (SyscallFunction)initUserProc,
+    (SyscallFunction)initUserProcWithPipeSwap,
     (SyscallFunction)exitProc,
     (SyscallFunction)waitPid,
     (SyscallFunction)fetchPCBList,
@@ -44,6 +46,7 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)waitSemaphore,
     (SyscallFunction)postSemaphore,
     (SyscallFunction)openSemaphore,
+    (SyscallFunction)memcpy,
     (SyscallFunction)getpid,
     (SyscallFunction)kill,
     (SyscallFunction)sleep,

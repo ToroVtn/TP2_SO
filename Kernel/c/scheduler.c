@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <utils.h>
 #include <pipes.h>
+#include <videoDriver.h>
 
 
 typedef struct PCBNode {
@@ -18,7 +19,7 @@ typedef struct {
   int len;
 } PCBList;
 
-const char* const stateNames[5] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
+const char* const stateNames[6] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
 
 #define IDLE_PID -1
 
@@ -53,11 +54,51 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
   return pcb;
 }
 
-PCBNode* createPCBNode(uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name) {
+PCBNode* createPCBNode(
+    uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name, ProcessPipes pipes
+) {
   PCBNode* node = malloc(sizeof(PCBNode));
+  if (node == NULL) return NULL;
   node->next = NULL;
-  node->pcb = createPCB(pid, priority, state, stack, rsp, rbp, name);
 
+  PCB* pcb = malloc(sizeof(PCB));
+  if (pcb == NULL) {
+    free(node);
+    return NULL;
+  }
+  pcb->pid = pid;
+  pcb->priority = priority;
+  pcb->state = state;
+  pcb->stack = stack;
+  pcb->rsp = rsp;
+  pcb->rbp = rbp;
+  pcb->name = name;
+  pcb->parent = pcbList.current->pcb;
+  pcb->waitingPCBCount = 0;
+  pcb->pipes = pipes;
+  if ((int32_t)pid != IDLE_PID) {
+    pcb->heap = malloc(PROCESS_HEAP_SIZE);
+    if (pcb->heap == NULL) {
+      free(node);
+      free(pcb);
+      return NULL;
+    }
+/* #ifdef BUDDY
+    freeListInit(pcb->heap, pcb->freeList);
+#else
+    pcb->freeListStart = malloc(sizeof(Block));
+    if (pcb->freeListStart == NULL) {
+      free(node);
+      free(pcb);
+      free(pcb->heap);
+      return NULL;
+    }
+    freeListInit(pcb->heap, pcb->freeListStart, &(pcb->freeListEnd), &(pcb->bytesAvailable));
+#endif
+  } else pcb->heap = NULL;
+  pcb->heapFreed = false;
+  node->pcb = pcb; */
+  }
   return node;
 }
 
@@ -67,8 +108,8 @@ PCBNode* createPCBNode(uint32_t pid, uint8_t priority, State state, void* stack,
 //   free(node);
 // }
 
-void addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name) {
-  PCBNode* node = createPCBNode(pid, 1, READY, stack, rsp, rbp, name);
+bool addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name, ProcessPipes pipes) {
+  PCBNode* node = createPCBNode(pid, 1, READY, stack, rsp, rbp, name, pipes);
 
   if (pcbList.head == NULL) {
     pcbList.head = node;
@@ -82,6 +123,7 @@ void addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name) {
   }
 
   ++pcbList.len;
+  return true;
 }
 
 void freeCurrent() {
@@ -120,7 +162,8 @@ void createPCBList() {
   void* stackTop;
   allocateStack(&stackBase, &stackTop);
   void* rsp = initStack(0, NULL, idleProc, stackBase);
-  idleProcPCBNode = createPCBNode(-1, 1, READY, stackTop, rsp, rsp, NULL);
+  ProcessPipes pipes = {.write = STDOUT, .read = STDIN, .err = STDERR};
+  idleProcPCBNode = createPCBNode(-1, 1, READY, stackTop, rsp, rsp, NULL, pipes);
 
   pcbList.head = NULL;
   pcbList.tail = NULL;
@@ -164,7 +207,7 @@ void* schedule(void* rsp) {
   }
 }
 static uint32_t pid = 0;
-void* createProc(int argc, char* argv[], void* procRip) {
+void* createProc(int argc, char* argv[], void* procRip, ProcessPipes pipes) {
   void* stackBase;
   void* stackTop;
   allocateStack(&stackBase, &stackTop);
@@ -176,48 +219,56 @@ void* createProc(int argc, char* argv[], void* procRip) {
     arg = arg + j + 1;
   }
   void* rsp = initStack(argc, argvStack, procRip, stackBase);
-  addPCB(pid++, stackTop, rsp, stackBase, argvStack[0]);
+  if (!addPCB(pid++, stackTop, rsp, stackBase, argvStack[0], pipes)) return NULL;
   return rsp;
 }
 
 void* initUserModuleProc() {
-  char* argv[1] = {"init"};
-  void* rsp = createProc(1, argv, userModule);
+  const char* argv[1] = {"init"};
+  ProcessPipes pipes = {.write = STDOUT, .read = STDIN, .err = STDERR};
+  void* rsp = createProc(1, argv, userModule, pipes);
+  if (rsp == NULL) return NULL;
   nextPCB();
   processInForeground = pcbList.current->pcb;
   pcbList.current->pcb->parent = NULL;
+  //initializeSpeaker();
   return rsp;
 }
 
-uint32_t initUserProc(int argc, char* argv[], void* procRip) {
-  createProc(argc, argv, procRip);
-  // Update foreground process to the newly created process
-  // This ensures that when a command is run from shell, it becomes the foreground process
-  PCB* newProcessPCB = getPCB(pid - 1);
-  if (newProcessPCB != NULL) {
-    processInForeground = newProcessPCB;
-  }
+int32_t initUserProcWithPipeSwap(int32_t argc, const char* argv[], void* processRip, ProcessPipes pipes) {
+  if (createProc(argc, argv, processRip, pipes) == NULL) return -1;
   return pid - 1;
 }
 
-void exitProcessByPCB(PCB* pcb, int exitCode) {
-  if (pcb->state == EXITED) {
-    return;
-  }
+uint32_t initUserProc(int argc, char* argv[], void* procRip) {
+  ProcessPipes pipes = {.write = STDIN, .read = STDOUT, .err = STDERR};
+  if (createProc(argc, argv, procRip, pipes) == NULL) return -1;
+  return pid - 1;
+}
+
+//QUIZAS HAY QUE CAMBIAR
+void exitProcessByPCB(PCB* pcb, int32_t exitCode) {
+  if (pcb->state == EXITED) return;
   if (pcb->state == BLOCKED) {
     pcb->state = STANDBY_FOR_EXIT;
+    free(pcb->heap);
+    pcb->heapFreed = true;
+    if (pcb->pid == pcbList.current->pcb->pid) switcherInterruption();
     return;
   }
+
   pcb->state = EXITED;
-  if(pcb->pid == processInForeground->pid) {
-    processInForeground = pcb->parent;
-  }
-  for (int i = 0; i < pcb->waitingPCBCount; ++i) {
+  if (pcb->pid == processInForeground->pid) processInForeground = pcb->parent;
+  for (int32_t i = 0; i < pcb->waitingPCBCount; ++i) {
     PCB* pcb2 = pcb->waitingPCBs[i];
-    pcb2->state = READY;
-    pcb2->waitedProcCode = 1;
+    if (pcb2->state == BLOCKED) {
+      pcb2->state = READY;
+      pcb2->waitedProcCode = exitCode;
+    } else if (pcb2->state == STANDBY_FOR_EXIT) {
+      exitProcessByPCB(pcb2, KILL_CODE);
+    }
   }
-  switcherInterruption(); // Switch to the next process
+  if (pcb->pid == pcbList.current->pcb->pid) switcherInterruption();
 }
 
 void exitProc(int exitCode) {
@@ -238,21 +289,16 @@ PCB* getPCB(uint32_t pid) { // gets the pcb by using pid
 }
 
 int waitPid(uint32_t pid) {
-  if (pid == pcbList.current->pcb->pid) {
-    return pcbList.current->pcb->waitedProcCode;
-  }
+  if (pid == pcbList.current->pcb->pid) return pcbList.current->pcb->waitedProcCode;
 
   PCB* pcb = getPCB(pid);
-  if (pcb == NULL || pcb->state == EXITED) {
-    return pcbList.current->pcb->waitedProcCode;
-  }
+  if (pcb == NULL || pcb->state == EXITED) return pcbList.current->pcb->waitedProcCode;
   pcb->waitingPCBs[pcb->waitingPCBCount++] = pcbList.current->pcb;
   pcbList.current->pcb->state = BLOCKED;
-  switcherInterruption(); 
+  if (pcbList.current->pcb->pid == processInForeground->pid) processInForeground = pcb;
+  switcherInterruption();
   return pcbList.current->pcb->waitedProcCode;
 }
-
-
 
 
 void convertPCBToUserland(userlandPCB* userlandPcb, PCB* kernelPcb) {
@@ -268,6 +314,7 @@ userlandPCB* fetchPCBList(int* len) {
   *len = pcbList.len;
   if (pcbList.head == NULL) return NULL;
   userlandPCB* pcbArray = malloc(sizeof(userlandPCB) * pcbList.len);
+  if(pcbArray == NULL) return NULL;
   PCBNode* node = pcbList.head;
   for (int i = 0; i < pcbList.len; ++i) {
     convertPCBToUserland(pcbArray + i, node->pcb);
@@ -294,12 +341,15 @@ uint32_t getpid() {
 }
 
 bool kill(uint32_t pid) {
+  if (pid == 0) return false;
   PCB* pcb = getPCB(pid);
-  if (pcb == NULL || pcb->state == EXITED) {
-    return false;
-  }
+  if (pcb == NULL || pcb->state == EXITED || pcb->state == STANDBY_FOR_EXIT) return false;
   exitProcessByPCB(pcb, KILL_CODE);
   return true;
+}
+
+void killCurrentProcess() {
+  kill(pcbList.current->pcb->pid);
 }
 
 void killForegroundProc() {
@@ -308,28 +358,33 @@ void killForegroundProc() {
   switcherInterruption(); // Switch to the next process
 }
 
-void setPriority(uint32_t pid, uint8_t newPriority) {
+bool setPriority(uint32_t pid, uint8_t newPriority) {
+  if (newPriority <= 0 || newPriority > 9) return false;
   PCB* pcb = getPCB(pid);
-  if(pcb != NULL){
-    pcb->priority = newPriority;
-  }
+  if (pcb == NULL) return false;
+  pcb->priority = newPriority;
+  return true; 
 }
 
-void block(uint32_t pid) {
+
+
+bool block(uint32_t pid) {
   PCB* pcb = getPCB(pid);
-  if(pcb != NULL){
-    if(pcb->pid == pcbList.current->pcb->pid){
-      blockProc();
-    }
-    pcb->state = BLOCKED;
+  if (pcb != NULL && (pcb->state == READY || pcb->state == RUNNING)) {
+    pcb->state = USER_BLOCKED;
+    if (pcb->pid == pcbList.current->pcb->pid) switcherInterruption();
+    return true;
   }
+  return false;
 }
 
-void unBlock(uint32_t pid) {
+bool unBlock(uint32_t pid) {
   PCB* pcb = getPCB(pid);
-  if(pcb != NULL){
+  if (pcb != NULL && pcb->state == USER_BLOCKED) {
     pcb->state = READY;
+    return true;
   }
+  return false;
 }
 
 

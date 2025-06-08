@@ -21,7 +21,7 @@ static Pipe stderrPipe;
 void initPipes() {
   pipeArray = initArray(sizeof(Pipe*), INITIAL_CAPACITY, (ElementDestructor)freePipe);
   freedPositions = initArray(sizeof(int32_t), INITIAL_CAPACITY, NULL);
-  // stdout --> Not used but I need to occupy this index anyways.
+  // STDOUT --> Not used but I need to occupy this index anyways.
   createPipe();
   stdinPipe = **(Pipe**)getAtArrayIdx(pipeArray, createPipe());
   stderrPipe = **(Pipe**)getAtArrayIdx(pipeArray, createPipe());

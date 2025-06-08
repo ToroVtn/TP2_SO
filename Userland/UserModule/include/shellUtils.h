@@ -14,6 +14,7 @@
 #include <utils.h>
 #include <time.h>
 
+
 #define MAX_ARG_COUNT 30
 #define MAX_ARG_LEN 50
 #define MAX_COMMAND_COUNT 50
@@ -48,6 +49,9 @@ typedef struct ShellCommand {
   // CommandOption options[];
 } ShellCommand;
 
+extern int32_t commandReturnCode;
+extern Array commands;
+
 void newPrompt();
 void incFont();
 void decFont();
@@ -60,6 +64,7 @@ void historyPush();
 void historyPrev();
 void historyNext();
 void resetHistoryCurrentVals();
+void clearScreenKeepCommand();
 // void parseCommandOpts(int argc, char argv[argc][MAX_ARG_LEN], int flagCount, CommandOption flags[]);
 
 ExitCode parseCommand();
@@ -89,5 +94,6 @@ void commandLoop(int argc, char* argv[argc]);
 void commandNice(int argc, char* argv[argc]);
 void commandBlock(int argc, char* argv[argc]);
 void commandUnBlock(int argc, char* argv[argc]);
+
 
 #endif

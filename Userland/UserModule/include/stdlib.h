@@ -11,6 +11,10 @@
 
 #define MAX_PADDING_DIGITS 2
 
+#define STDOUT 0
+#define STDIN 1
+#define STDERR 2
+
 #define TO_LOWER(c) ((c >= 'A' && c <= 'Z') ? (c + 'a' - 'A') : c)
 #define IS_HEX_LETTER(c) ('a' <= TO_LOWER(c) && TO_LOWER(c) <= 'f')
 #define IS_DIGIT(c) ('0' <= c && c <= '9')

@@ -45,5 +45,6 @@ void printCursor();
 void eraseCursor();
 void clearScreen();
 void scrollScreen();
+void printNextBuf(const char* buf, uint32_t len);
 
 #endif
