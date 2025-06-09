@@ -25,7 +25,7 @@ global sysWaitPid
 global sysPCBList
 global sysCreateSemaphore
 global sysDestroySemaphore
-global syswaitSem
+global sysWaitSem
 global sysPostSem
 global sysOpenSem
 global sysMemcpy
@@ -110,7 +110,7 @@ sysDestroySemaphore:
   syscall 26
 sysDestroySemaphoreByName:
   syscall 27
-syswaitSem:
+sysWaitSem:
   syscall 28
 sysPostSem:
   syscall 29

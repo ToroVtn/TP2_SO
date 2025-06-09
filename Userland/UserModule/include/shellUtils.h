@@ -98,6 +98,7 @@ void commandUnBlock(int argc, char* argv[argc]);
 void commandTestPipes(int32_t argc, char* argv[argc]);
 void commandTestPriority(int32_t argc, char* argv[argc]);
 void commandGetMemoryState(int32_t argc, char* argv[argc]);
+void commandTestSem(int32_t argc, char* argv[argc]);
 
 
 #endif

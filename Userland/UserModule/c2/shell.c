@@ -65,6 +65,7 @@ int32_t shell() {
   addCommand("testPriority", "Test the process priority system, 0 for small wait, 1 for long wait.", commandTestPriority);
   addCommand("testMM", "Test Memory manager.", commandTestMM);
   addCommand("memState", "Get the memory state of the current process or a specified pid.", commandGetMemoryState);
+  addCommand("testSem", "Test semaphores by using multiple processes to\n modifying shared variable.", commandTestSem);
 
   const char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));

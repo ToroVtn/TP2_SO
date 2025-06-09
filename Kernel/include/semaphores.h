@@ -25,7 +25,7 @@ typedef struct semaphore{
     bool destroyed;
     PCBNodeSem * pcbNodeHead;
     PCBNodeSem * pcbNodeTail;
-    char* name[MAX_NAME_LENGTH + 1];
+    char name[MAX_NAME_LENGTH + 1];
 } semaphore;
 
 
