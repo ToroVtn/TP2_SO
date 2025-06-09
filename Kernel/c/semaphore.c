@@ -58,7 +58,7 @@ int queue(int semId, const PCB* queuedProcess) {
     semaphore* sem = getAtArrayIdx(semArray, semId);
     if (sem == NULL) return false;
 
-    PCBNodeSem* node = malloc(sizeof(PCBNodeSem));
+    PCBNodeSem* node = globalMalloc(sizeof(PCBNodeSem));
     if (node == NULL) return false;
     node->procPCB = queuedProcess;
     node->next = NULL;
@@ -79,7 +79,7 @@ const PCB* dequeue(int semId) {
     PCB* pcb = sem->pcbNodeHead->procPCB;
     PCBNodeSem* temp = sem->pcbNodeHead;
     sem->pcbNodeHead = sem->pcbNodeHead->next;
-    free(temp);
+    globalFree(temp);
     return pcb;
 }
 

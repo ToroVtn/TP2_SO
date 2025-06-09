@@ -32,7 +32,7 @@ void incTicks() {
 
           SleptProcess* toFree = currentProcess;
           currentProcess = currentProcess->next;
-          free(toFree);
+          globalFree(toFree);
       } else {
           previousProcess = currentProcess;
           currentProcess = currentProcess->next;
@@ -55,7 +55,7 @@ unsigned long calculateTicks(unsigned long ms) {
 void sleep(unsigned long ms) {
   unsigned long initialTicks = calculateTicks(ms);
   if(initialTicks > 0){
-    SleptProcess * aux = malloc(sizeof(*aux));
+    SleptProcess * aux = globalMalloc(sizeof(*aux));
     aux->ticksRemaining = initialTicks;
     aux->process = fetchCurrentPCB();
     aux->next = first;

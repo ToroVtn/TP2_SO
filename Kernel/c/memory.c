@@ -31,7 +31,7 @@ rsp = (e - 8) & ~7
 0x00000000000503f0  00 00 00 00 00 00 00 00
  */
 void allocateStack(void** stackBase, void** stackTop) {
-  *stackTop = malloc(stackSize);
+  *stackTop = globalMalloc(stackSize);
   *stackBase = *stackTop + stackSize - 1;
   *stackBase = (void*)(((uint64_t)*stackBase - addressByteSize) & ~(addressByteSize - 1));
 }

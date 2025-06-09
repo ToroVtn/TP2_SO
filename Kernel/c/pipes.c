@@ -1,6 +1,6 @@
 //#include <array.h>
 #include <memory.h>
-#include "../include/pipes.h"
+#include <pipes.h>
 #include <semaphores.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,7 +12,7 @@ static Array pipeArray;
 static Array freedPositions;
 
 void freePipe(Pipe** p) {
-  free(*p);
+  globalFree(*p);
 }
 
 static Pipe stdinPipe;
@@ -28,7 +28,7 @@ void initPipes() {
 }
 
 int64_t createPipe() {
-  Pipe* p = malloc(sizeof(Pipe));
+  Pipe* p = globalMalloc(sizeof(Pipe));
   p->mutex = initSem(1);
   p->full = initSem(0);
   p->empty = initSem(BUFFER_SIZE);
@@ -123,6 +123,6 @@ bool deletePipe(int32_t pipeId) {
   destroySemaphore(p->mutex);
   destroySemaphore(p->full);
   destroySemaphore(p->empty);
-  // setAtArrayIdx will do the free of the pipe itself when it overrides this position.
+  // setAtArrayIdx will do the globalFree of the pipe itself when it overrides this position.
   return true;
 }

@@ -5,28 +5,38 @@
 
 #include <stdint.h>
 #include <stdio.h>
-
-#define NULL (void *) 0
-#define size_t uint64_t
+#include <stdbool.h>
 
 #ifdef BUDDY
+
 typedef struct Block {
     struct Block* next;
     uint32_t size;
-    boolean isFree;
+    bool isFree;
 } Block;
 
+void listInit(void* heapStart, Block* freeList[]);
+
 #else
+
 typedef struct Block{
     struct Block * nextFreeBlock; /**< The next free block in the list. */
     size_t blockSize;                     /**< The size of the free block. */
 } Block;
+
+void listInit(void* heapStart, Block* listStart, Block** listEnd, size_t* freeBytes);
+
 #endif
 
-void* malloc(uint64_t size);
+void* malloc(size_t size);
+void* globalMalloc(size_t size);
 void free(void* ptr);
 void* realloc(void* ptr, uint64_t oldSize, uint64_t newSize);
+void globalFree(void * ptr);
 void memoryInit(void* heapStart);
 void allocateStack(void** rspStart, void** rspEnd);
+
+void getMemState();
+void getGlobalMemState();
 
 #endif

@@ -1,6 +1,7 @@
 //based on freeRTOS heap_4.c
 
-#include "memory.h"
+#include <memory.h>
+#include <scheduler.h>
 #include <stdint.h>
 
 #ifndef BUDDY
@@ -9,13 +10,8 @@
 
 #define BITS_PER_BYTE ( ( size_t ) 8 )
 
-//typedef struct Block{
-//    struct Block * nextFreeBlock; /**< The next free block in the list. */
-//    size_t blockSize;                     /**< The size of the free block. */
-//} Block;
-
 static const size_t block_size = sizeof(Block);
-static const uint64_t addressByteSize = sizeof(void*);
+static const size_t addressByteSize = sizeof(void*);
 
 #define MINIMUM_BLOCK_SIZE    ( ( size_t ) ( block_size << 1 ) )
 
@@ -38,35 +34,32 @@ static size_t freeBytes;
 
 void insertBlockIntoFreeList(Block * block);
 
-void memoryInit(void * endOfModules){
-    void * alignedHeapStart = (void*) ( ( (uint64_t) endOfModules + addressByteSize - 1) & ~(addressByteSize - 1));
-    //&listStart->nFB doesnt compile
-    listStart.nextFreeBlock = (Block *) alignedHeapStart;
-    listStart.blockSize = 0;
+void internalListInit(void* heapStart, uint32_t heapSize, Block* listStart, Block** listEnd, size_t* freeBytes){
+    void * alignedHeapStart = (void*) ( ( (size_t) heapStart + addressByteSize - 1) & ~(addressByteSize - 1));
+    listStart->nextFreeBlock = (Block *) alignedHeapStart;
+    listStart->blockSize = 0;
 
-    void * alignedHeapEnd = (void*)((uint64_t) (alignedHeapStart + HEAP_SIZE - block_size));
-    listEnd = (Block *) alignedHeapEnd;
-    listEnd->blockSize = 0;
-    listEnd->nextFreeBlock = NULL;
+    void * alignedHeapEnd = (void*)((size_t) (alignedHeapStart + HEAP_SIZE - block_size));
+    *listEnd = (Block *) alignedHeapEnd;
+    (*listEnd)->blockSize = 0;
+    (*listEnd)->nextFreeBlock = NULL;
 
     Block * firstFreeBlock = (Block *) alignedHeapStart;
-    firstFreeBlock->blockSize = (uint64_t) (alignedHeapEnd - alignedHeapStart);
-    firstFreeBlock->nextFreeBlock = listEnd;
+    firstFreeBlock->blockSize = (size_t) (alignedHeapEnd - alignedHeapStart);
+    firstFreeBlock->nextFreeBlock = *listEnd;
 
-    freeBytes = firstFreeBlock->blockSize;
+    *freeBytes = firstFreeBlock->blockSize;
 }
 
+void listInit(void* heapStart, Block* listStart, Block** listEnd, size_t* freeBytes) {
+    internalListInit(heapStart, PROCESS_HEAP_SIZE, listStart, listEnd, freeBytes);
+}
+  
+void memoryInit(void* endOfModules){
+    internalListInit(endOfModules, HEAP_SIZE, &listStart, &listEnd, &freeBytes);
+}
 
-// void* globalMalloc(uint64_t size) {
-//   return internalMalloc(size, &listStart, listEnd, &freeBytesRemaining);
-// }
-
-// void* malloc(uint64_t size) {
-//   PCB* pcb = fetchCurrentPCB();
-//   return internalMalloc(size, pcb->freeListStart, pcb->freeListEnd, &(pcb->bytesAvailable));
-// }
-
-void * malloc( size_t request ){
+void * internalMalloc( size_t request, Block * listStart, Block * listEnd, size_t * freeBytes ){
     if (request <= 0) return NULL;
 
     Block * block;
@@ -75,10 +68,10 @@ void * malloc( size_t request ){
     void * toReturn = NULL;
     size_t alignedRequiredSize = (request + block_size + addressByteSize - 1) & ~(addressByteSize - 1);
 
-    if( alignedRequiredSize > freeBytes || alignedRequiredSize <= 0 || !BLOCK_SIZE_IS_VALID(alignedRequiredSize)) return NULL;
+    if( alignedRequiredSize > *freeBytes || alignedRequiredSize <= 0 || !BLOCK_SIZE_IS_VALID(alignedRequiredSize)) return NULL;
 
-    previousBlock = &listStart;
-    block = listStart.nextFreeBlock;
+    previousBlock = listStart;
+    block = listStart->nextFreeBlock;
     while( block->blockSize < alignedRequiredSize && block->nextFreeBlock != NULL ){
         previousBlock = block;
         block = block->nextFreeBlock;
@@ -100,29 +93,26 @@ void * malloc( size_t request ){
         block->blockSize = alignedRequiredSize;
 
         insertBlockIntoFreeList(newBlockLink);
-        // newBlockLink->nextFreeBlock = previousBlock->nextFreeBlock;
-        // previousBlock->nextFreeBlock = newBlockLink;
     }
 
-    freeBytes -= block->blockSize;
+    *freeBytes -= block->blockSize;
 
     block->nextFreeBlock = NULL;
 
     return toReturn;
 }
 
-// void globalFree(void* ptr) {
-//   internalFree(ptr, &listStart, listEnd, &freeBytesRemaining);
-// }
+void* globalMalloc(size_t size) {
+    return internalMalloc(size, &listStart, listEnd, &freeBytes);
+}
+  
+void* malloc(size_t size) {
+    PCB* pcb = fetchCurrentPCB();
+    return internalMalloc(size, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
+}
+  
 
-// void free(void* ptr) {
-//   if (ptr == NULL) return;
-//   PCB* pcb = fetchCurrentPCB();
-//   if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
-//   internalFree(ptr, pcb->freeListStart, pcb->freeListEnd, &(pcb->bytesAvailable));
-// }
-
-void free( void * ptr ){
+void internalFree( void* ptr, Block* listStart, Block* listEnd, size_t* freeBytes ){
     if( ptr == NULL ) return;
 
     // Block info is before the ptr like a header
@@ -131,9 +121,20 @@ void free( void * ptr ){
 
     if( BLOCK_IS_ALLOCATED( toFree ) && toFree->nextFreeBlock == NULL ){
         FREE_BLOCK( toFree );
-        freeBytes += toFree->blockSize;
+        *freeBytes += toFree->blockSize;
         insertBlockIntoFreeList( ( ( Block * ) toFree ) );
     }
+}
+
+void globalFree(void* ptr) {
+  internalFree(ptr, &listStart, listEnd, &freeBytes);
+}
+
+void free(void* ptr) {
+  if (ptr == NULL) return;
+  PCB* pcb = fetchCurrentPCB();
+  if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
+  internalFree(ptr, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
 }
 
 //FUNCION PROVISORIA
@@ -143,7 +144,7 @@ void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
     }
     
     if( newSize == 0 ){
-        free( ptr );
+        globalFree( ptr );
         return NULL;
     }
     
@@ -151,7 +152,7 @@ void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
         return ptr;
     }
     
-    void * newPtr = malloc( newSize );
+    void * newPtr = globalMalloc( newSize );
 
     if(newPtr == NULL){
         return NULL;
@@ -159,7 +160,7 @@ void * realloc( void * ptr, uint64_t oldSize, uint64_t newSize ){
     
     uint64_t copySize = (oldSize < newSize) ? oldSize : newSize;        
     newPtr = memcpy(newPtr, ptr, copySize);
-    free( ptr );
+    globalFree( ptr );
     
     return newPtr;
 }

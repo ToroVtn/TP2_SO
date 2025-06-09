@@ -22,14 +22,14 @@ void* initArray(uint64_t elemSize, uint64_t initialCapacity, ElementDestructor e
   if (elemSize == 0) {
     return NULL;
   }
-  ArrayCDT* arr = malloc(sizeof(ArrayCDT));
+  ArrayCDT* arr = globalMalloc(sizeof(ArrayCDT));
   if (arr == NULL) {
     return NULL;
   }
   arr->capacity = initialCapacity ? initialCapacity : 1;
-  arr->array = malloc(arr->capacity * elemSize);
+  arr->array = globalMalloc(arr->capacity * elemSize);
   if (arr->array == NULL) {
-    free(arr);
+    globalFree(arr);
     return NULL;
   }
   arr->len = 0;
@@ -46,8 +46,8 @@ bool freeArray(Array arr) {
   if (arr->elementDestructor != NULL) {
     for (int32_t i = 0; i < arr->len; ++i) arr->elementDestructor(getAtArrayIdx(arr, i));
   }
-  free(arr->array);
-  free(arr);
+  globalFree(arr->array);
+  globalFree(arr);
   return true;
 }
 
@@ -187,7 +187,7 @@ void* arrayCloneAsCArray(Array arr) {
   if (arr == NULL) {
     return NULL;
   }
-  void* array = malloc(arr->len * arr->elemSize);
+  void* array = globalMalloc(arr->len * arr->elemSize);
   arrayCopyTo(arr, array);
   return array;
 }

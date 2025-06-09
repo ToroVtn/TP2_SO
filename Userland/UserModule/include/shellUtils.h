@@ -13,6 +13,7 @@
 #include <sysinfo.h>
 #include <utils.h>
 #include <time.h>
+#include <testMM.h>
 
 #define MAX_ARG_COUNT 30
 #define MAX_ARG_LEN 50

@@ -2,8 +2,11 @@
 #define SCHEDULER_H
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <memory.h>
+#include <stdbool.h>
+
+#define PROCESS_HEAP_ORDER_COUNT 17
+#define PROCESS_HEAP_SIZE (1 << (PROCESS_HEAP_ORDER_COUNT - 1))
 
 #define MAX_NAME_LENGTH 50
 #define KILL_CODE 1
@@ -36,13 +39,13 @@ typedef struct PCB {
   ProcessPipes pipes;
   void* heap;
   bool heapFreed;
-  /* #ifdef BUDDY
+#ifdef BUDDY
   Block* freeList[PROCESS_HEAP_ORDER_COUNT];
-  #else
-  Block* freeListStart;
-  Block* freeListEnd;
-  uint64_t bytesAvailable;
-  #endif */
+#else
+  Block* listStart;
+  Block* listEnd;
+  size_t freeBytes;
+#endif
 } PCB;
 
 typedef struct {
@@ -65,9 +68,9 @@ void startFirstProcess(void* procAddress);
 void exitProc(int exitCode);
 int waitPid(uint32_t pid);
 userlandPCB* fetchPCBList(int* len);
-const PCB* fetchCurrentPCB();
+PCB* fetchCurrentPCB();
 void blockProc();
-void readyProc(const PCB* pcb);
+void readyProc(PCB* pcb);
 uint32_t getpid();
 bool kill(uint32_t pid);
 void killCurrentForegroundProcess();
