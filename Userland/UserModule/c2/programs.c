@@ -396,6 +396,7 @@ void commandCat() {
   signed char c;
   while ((int)(c = getChar()) != EOF) {
     if (printChar(c) < 0) sysExit(PROCESS_FAILURE);
+    sysHalt();
   }
   sysExit(SUCCESS);
 }

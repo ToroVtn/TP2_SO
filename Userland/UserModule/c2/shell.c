@@ -78,10 +78,9 @@ int32_t shell() {
 
   KeyStruct key;
   while (true) {
-    
     if(!getKey(&key)) {
      
-      sysHalt();
+      //sysHalt();
       continue;
     }
     

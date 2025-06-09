@@ -74,7 +74,8 @@ void readKeyToBuffer() {
         killForegroundProc();
         return;
       } else if (c == 'D' || c == 'd') {
-        c = EOF;
+          writeStdin(EOF); // EOF signal
+          return;
       }
     }
     

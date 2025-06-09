@@ -125,28 +125,27 @@ void writeStdin(char c) {
 int64_t readStdin(char* buf, int32_t len) {
   if (len <= 0) return 0;
   
+  // IMPORTANT: Remove this check that's causing the race condition
+  // if (stdinPipe.consumingIndex == stdinPipe.producingIndex) {
+  //   return 0; 
+  // }
   
-  if (stdinPipe.consumingIndex == stdinPipe.producingIndex) {
-    return 0; 
-  }
-  
-  
+  // Always wait for data to be available - this will cause lag but prevent the loop
   waitSemaphore(stdinPipe.written);
   waitSemaphore(stdinPipe.mutex);
   
-  
+  // Get the character
   *buf = stdinPipe.buffer[stdinPipe.consumingIndex];
   
-  
+  // Clear the buffer position
   stdinPipe.buffer[stdinPipe.consumingIndex] = 0;
   
-  
+  // Advance the index
   stdinPipe.consumingIndex = (stdinPipe.consumingIndex + 1) % BUFFER_SIZE;
   
-  
+  // Release the mutex
   postSemaphore(stdinPipe.mutex);
   postSemaphore(stdinPipe.empty);
-  
   
   return 1;
 }

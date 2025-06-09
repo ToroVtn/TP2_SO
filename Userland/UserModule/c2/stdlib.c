@@ -84,7 +84,7 @@ void repaint() {
 
 int32_t printChar(char c) {
   Pipe pipes = sysFetchPipes();
-  
+  if(c == 0) return 0; 
   // Handle backspace specially
   if (c == '\b') {
     // Remove character from screen buffer
