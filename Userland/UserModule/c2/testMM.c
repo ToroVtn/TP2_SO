@@ -11,7 +11,7 @@ typedef struct MM_rq {
   uint32_t size;
 } mm_rq;
 
-static char* usageMessage = "Usage: %s <max_memory>\n\tmax_memory: maximum number of KB to allocate\n";
+#define usageMessage "Usage: %s <max_memory>\n\tmax_memory: maximum number of KB to allocate\n"
 
 // We use another process to print because sysGetProcessMemoryState allocates memory at
 // the current process' heap so the memory state would be off.
