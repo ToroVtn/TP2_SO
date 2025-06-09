@@ -277,7 +277,7 @@ void exitProcessByPCB(PCB* pcb, int32_t exitCode) {
 }
 
 void exitProc(int exitCode) {
-  exitProcessByPCB(pcbList.current->pcb, KILL_CODE);
+  exitProcessByPCB(pcbList.current->pcb, exitCode);
   switcherInterruption(); // Switch to the next process
 }
 
