@@ -46,4 +46,8 @@ extern int32_t sysPipeInit();
 extern Pipe sysFetchPipes();
 extern int32_t sysCreateProcessWithPipeSwap(int argc, const char* argv[], void* procRip, Pipe pipes);
 extern void* sysMemcpy(void* destination, const void* source, uint64_t length);
+extern char* sysGetGlobalMemoryState();
+extern char* sysGetProcessMemoryState(uint32_t pid);
+extern bool sysDestroySemaphoreByName(char* name);
+extern int32_t sysSemInit(uint32_t initialValue);
 #endif

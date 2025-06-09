@@ -61,7 +61,10 @@ int32_t shell() {
   
   addCommand("block", "Blocks the specified process", commandBlock);
   addCommand("unblock", "Unblocks the specified process", commandUnBlock);
-  
+  addCommand("testPipe", "Test the pipe system with a writer and a reader process.", commandTestPipes);
+  addCommand("testPriority", "Test the process priority system, 0 for small wait, 1 for long wait.", commandTestPriority);
+  addCommand("testMM", "Test Memory manager.", commandTestMM);
+  addCommand("memState", "Get the memory state of the current process or a specified pid.", commandGetMemoryState);
 
   const char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));

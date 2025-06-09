@@ -39,8 +39,8 @@ typedef struct PCB {
   #ifdef BUDDY
   Block* freeList[PROCESS_HEAP_ORDER_COUNT];
   #else
-  Block* freeListStart;
-  Block* freeListEnd;
+  Block* listStart;
+  Block* listEnd;
   uint64_t bytesAvailable;
   #endif
 } PCB;
@@ -82,5 +82,6 @@ bool unBlock(uint32_t pid);
 void yield();
 int64_t read(int32_t pipeId, char* buf, int32_t len);
 int64_t write(int32_t pipeId, const char* buf, int32_t len);
+PCB* getPCB(uint32_t pid);
 
 #endif

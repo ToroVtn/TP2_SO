@@ -1,11 +1,13 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#define BUDDY // comment this to change to the other mm implementation (heap4)
+// #define BUDDY // comment this to change to the other mm implementation (heap4)
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#define MAX_STRING_SIZE 1000
 
 #ifdef BUDDY
 
@@ -36,7 +38,7 @@ void memoryInit(void* heapStart);
 void allocateStack(void** rspStart, void** rspEnd);
 void* realloc(void* ptr, uint64_t oldSize, uint64_t newSize);
 
-void getMemState();
-void getGlobalMemState();
+char* getGlobalMemoryState();
+char* getProcessMemoryState(uint32_t pid);
 
 #endif

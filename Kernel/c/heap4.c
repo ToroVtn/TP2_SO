@@ -1,5 +1,5 @@
-//based on freeRTOS heap_4.c
-
+#include <memory.h>
+#include <scheduler.h>
 #include <memory.h>
 #include <scheduler.h>
 
@@ -31,7 +31,42 @@ static Block * listEnd = NULL;
 
 static size_t freeBytes;
 
-void insertBlockIntoFreeList(Block * block);
+static void insertBlockIntoFreeList(Block * blockToInsert, Block* listStart, Block* listEnd){
+  Block * blockIterator;
+  uint8_t *aux;
+
+  // Iterate through the list until a block is found that has a higher address than the block being inserted. 
+  for (blockIterator = listStart; blockIterator->nextFreeBlock < blockToInsert; blockIterator = blockIterator->nextFreeBlock) {}
+
+  // Check if block inserted is after blockIterator
+  aux = (uint8_t *) blockIterator;
+
+  if ((aux + blockIterator->blockSize) == (uint8_t *)blockToInsert) {
+      blockIterator->blockSize += blockToInsert->blockSize;
+      blockToInsert = blockIterator;
+  }
+  // Check if block inserted is right before blockIterator->next
+  aux = (uint8_t *)blockToInsert;
+
+  if ((aux + blockToInsert->blockSize) == (uint8_t *) blockIterator->nextFreeBlock) {
+      if (blockIterator->nextFreeBlock != listEnd) {
+          /* Form one big block from the two blocks. */
+          blockToInsert->blockSize += blockIterator->nextFreeBlock->blockSize;
+          blockToInsert->nextFreeBlock = blockIterator->nextFreeBlock->nextFreeBlock;
+      }
+      else {
+          blockToInsert->nextFreeBlock = listEnd;
+      }
+  }
+  else {
+      blockToInsert->nextFreeBlock = blockIterator->nextFreeBlock;
+  }
+
+  // Check so it doesn't point to itself
+  if (blockIterator != blockToInsert) {
+      blockIterator->nextFreeBlock = blockToInsert;
+  }
+}
 
 void internalListInit(void* heapStart, uint32_t heapSize, Block* listStart, Block** listEnd, size_t* freeBytes){
     void * alignedHeapStart = (void*) ( ( (size_t) heapStart + addressByteSize - 1) & ~(addressByteSize - 1));
@@ -91,7 +126,7 @@ void * internalMalloc( size_t request, Block * listStart, Block * listEnd, size_
         newBlockLink->blockSize = block->blockSize - alignedRequiredSize;
         block->blockSize = alignedRequiredSize;
 
-        insertBlockIntoFreeList(newBlockLink);
+        insertBlockIntoFreeList(newBlockLink, listStart, listEnd);
     }
 
     *freeBytes -= block->blockSize;
@@ -107,22 +142,19 @@ void* globalMalloc(size_t size) {
   
 void* malloc(size_t size) {
     PCB* pcb = fetchCurrentPCB();
-    return internalMalloc(size, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
+    return internalMalloc(size, pcb->listStart, pcb->listEnd, &(pcb->bytesAvailable));
 }
-  
 
-void internalFree( void* ptr, Block* listStart, Block* listEnd, size_t* freeBytes ){
-    if( ptr == NULL ) return;
+void internalFree(void* ptr, Block* listStart, Block* listEnd, uint64_t* freeBytes) {
+  if( ptr == NULL) return;
+  // The block structure is before the useful memory
+  Block *freeBlock = (Block *) ptr - 1;
 
-    // Block info is before the ptr like a header
-    // uint8_t * puc = ( uint8_t * ) ptr - block_size;
-    Block * toFree = (Block *) ptr - 1;
-
-    if( BLOCK_IS_ALLOCATED( toFree ) && toFree->nextFreeBlock == NULL ){
-        FREE_BLOCK( toFree );
-        *freeBytes += toFree->blockSize;
-        insertBlockIntoFreeList( ( ( Block * ) toFree ) );
-    }
+  if (BLOCK_IS_ALLOCATED(freeBlock) && freeBlock->nextFreeBlock == NULL) {
+      FREE_BLOCK(freeBlock);
+      *freeBytes += freeBlock->blockSize;
+      insertBlockIntoFreeList(((Block *)freeBlock), listStart, listEnd);
+  }
 }
 
 void globalFree(void* ptr) {
@@ -133,43 +165,37 @@ void free(void* ptr) {
   if (ptr == NULL) return;
   PCB* pcb = fetchCurrentPCB();
   if (ptr < pcb->heap || ptr >= pcb->heap + PROCESS_HEAP_SIZE) return;
-  internalFree(ptr, pcb->listStart, pcb->listEnd, &(pcb->freeBytes));
+  internalFree(ptr, pcb->listStart, pcb->listEnd, &(pcb->bytesAvailable));
 }
 
-void insertBlockIntoFreeList(Block * block){
-    Block * blockIt;
-    uint8_t * puc; // aux for adress pointer adition
 
-    // find a blockIt that has a higher adress than block 
-    for( blockIt = &listStart; blockIt->nextFreeBlock < block; blockIt = blockIt->nextFreeBlock ){}
+char* internalGetMemoryState(int32_t heapSize, uint64_t* bytesAvailable) {
+  heapSize -= block_size;
+  static char* unit = " B ";
+  char* toReturn = malloc(MAX_STRING_SIZE);
+  if (toReturn == NULL) return NULL;
+  int32_t i = strcpy(toReturn, "Total: ");
+  i += uintToBase(heapSize, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+  i += strcpy(toReturn + i, "| Allocated: ");
+  i += uintToBase(heapSize - *bytesAvailable, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+  i += strcpy(toReturn + i, "| Free: ");
+  i += uintToBase(*bytesAvailable, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+  toReturn[i] = 0;
 
-    // check if blockIt and block are contiguous
-    puc = ( uint8_t * ) blockIt;
+  return toReturn;
+}
 
-    if( ( puc + blockIt->blockSize ) == ( uint8_t * ) block ){
-        blockIt->blockSize += block->blockSize;
-        block = blockIt;
-    }
+char* getGlobalMemoryState() {
+  return internalGetMemoryState(HEAP_SIZE, &freeBytes);
+}
 
-    // check if block is contiguous with blockIt->nextFreeBlock
-    puc = ( uint8_t * ) block;
-
-    if( ( puc + block->blockSize ) == ( uint8_t * ) blockIt->nextFreeBlock ){
-        if( blockIt->nextFreeBlock != listEnd ){
-            // merge them
-            block->blockSize += blockIt->nextFreeBlock->blockSize;
-            block->nextFreeBlock = blockIt->nextFreeBlock->nextFreeBlock;
-        } else {
-            block->nextFreeBlock = listEnd;
-        }
-    } else {
-        block->nextFreeBlock = blockIt->nextFreeBlock;
-    }
-
-    // if there was no contiguity, simply add
-    if( blockIt != block ){
-        blockIt->nextFreeBlock = block;
-    }
+char* getProcessMemoryState(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL) return NULL;
+  return internalGetMemoryState(PROCESS_HEAP_SIZE, &(pcb->bytesAvailable));
 }
 
 #endif

@@ -162,6 +162,50 @@ void free(void * ptr){
     mergeBlock(block, order, pcb->heap, PROCESS_HEAP_SIZE, pcb->freeList);
 }
 
+char* internalGetMemoryState(int32_t orderCount, int32_t heapSize, Block* freeList[]) {
+  static char* unit = " B ";
+  char* toReturn = malloc(MAX_STRING_SIZE);
+  if (toReturn == NULL) return NULL;
+  int32_t i = strcpy(toReturn, "Total: ");
+  i += uintToBase(heapSize, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+
+  uint32_t totalFreeMemory = 0;
+  uint32_t totalBlocks = 0;
+  Block* currentBlock;
+  for (int32_t j = 0; j < orderCount; j++) {
+    currentBlock = freeList[j];
+    while (currentBlock != NULL) {
+      totalFreeMemory += currentBlock->size;
+      currentBlock = currentBlock->next;
+      ++totalBlocks;
+    }
+  }
+  i += strcpy(toReturn + i, "| Used: ");
+  i += uintToBase(heapSize - totalFreeMemory, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+
+  i += strcpy(toReturn + i, "| Unused: ");
+  i += uintToBase(totalFreeMemory, toReturn + i, 10);
+  i += strcpy(toReturn + i, unit);
+  i += strcpy(toReturn + i, "in ");
+  i += uintToBase(totalBlocks, toReturn + i, 10);
+  i += strcpy(toReturn + i, " blocks ");
+  toReturn[i] = 0;
+
+  return toReturn;
+}
+
+char* getGlobalMemoryState() {
+  return internalGetMemoryState(ORDER_COUNT, MAX_MEMORY_AVAILABLE, freeList);
+}
+
+char* getProcessMemoryState(uint32_t pid) {
+  PCB* pcb = getPCB(pid);
+  if (pcb == NULL) return NULL;
+  return internalGetMemoryState(PROCESS_HEAP_ORDER_COUNT, PROCESS_HEAP_SIZE, pcb->freeList);
+}
+
 // void getMemoryState(char* buffer) {
 //     int offset = 0;
 //     for (int i = 0; i < ORDER_COUNT; i++) {

@@ -13,6 +13,7 @@
 #include <sysinfo.h>
 #include <utils.h>
 #include <time.h>
+#include <arrayUtils.h>
 
 
 #define MAX_ARG_COUNT 30
@@ -94,6 +95,9 @@ void commandLoop(int argc, char* argv[argc]);
 void commandNice(int argc, char* argv[argc]);
 void commandBlock(int argc, char* argv[argc]);
 void commandUnBlock(int argc, char* argv[argc]);
+void commandTestPipes(int32_t argc, char* argv[argc]);
+void commandTestPriority(int32_t argc, char* argv[argc]);
+void commandGetMemoryState(int32_t argc, char* argv[argc]);
 
 
 #endif

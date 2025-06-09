@@ -18,14 +18,14 @@ global sysGetCurrentTime
 global sysGetRegisters
 global sysMalloc
 global sysFree
-global sysCreateProcess,
-global sysCreateProcessWithPipeSwap,
-global sysExit,
-global sysWaitPid,
+global sysCreateProcess
+global sysCreateProcessWithPipeSwap
+global sysExit
+global sysWaitPid
 global sysPCBList
 global sysCreateSemaphore
 global sysDestroySemaphore
-global sysWaitSem
+global syswaitSem
 global sysPostSem
 global sysOpenSem
 global sysMemcpy
@@ -43,6 +43,8 @@ global sysWrite
 global sysBlockByUser
 global sysUnblock
 global sysYield
+global sysGetGlobalMemoryState
+global sysGetProcessMemoryState
 
 
 
@@ -66,8 +68,6 @@ sysSetColor:
   syscall 5
 sysGetModKeys:
   syscall 6
-;sysReadKbBuffer:
-;  syscall 7
 sysWriteCharXY:
   syscall 7
 sysWriteCharNext:
@@ -88,53 +88,61 @@ sysMalloc:
   syscall 15
 sysFree:
   syscall 16
-sysCreateProcess:
+sysGetGlobalMemoryState:
   syscall 17
-sysCreateProcessWithPipeSwap:
+sysGetProcessMemoryState:
   syscall 18
-sysExit:
+sysCreateProcess:
   syscall 19
-sysWaitPid:
+sysCreateProcessWithPipeSwap:
   syscall 20
-sysPCBList:
+sysExit:
   syscall 21
-sysCreateSemaphore:
+sysWaitPid:
   syscall 22
-sysDestroySemaphore:
+sysPCBList:
   syscall 23
-sysWaitSem:
+sysSemInit:
   syscall 24
-sysPostSem:
+sysCreateSemaphore:
   syscall 25
-sysOpenSem:
+sysDestroySemaphore:
   syscall 26
-sysMemcpy:
+sysDestroySemaphoreByName:
   syscall 27
-sysGetPid:
+syswaitSem:
   syscall 28
-sysKill:
+sysPostSem:
   syscall 29
-sysSleep:
+sysOpenSem:
   syscall 30
-sysSetPriority:
+sysMemcpy:
   syscall 31
-sysPipeInit:
+sysGetPid:
   syscall 32
-sysDestroyPipe:
+sysKill:
   syscall 33
-sysChangePipeRead:
+sysSleep:
   syscall 34
-sysChangePipeWrite:
+sysSetPriority:
   syscall 35
-sysFetchPipes:
+sysPipeInit:
   syscall 36
-sysRead:
+sysDestroyPipe:
   syscall 37
-sysWrite:
+sysChangePipeRead:
   syscall 38
-sysBlockByUser:
+sysChangePipeWrite:
   syscall 39
-sysUnblock:
+sysFetchPipes:
   syscall 40
-sysYield:
+sysRead:
   syscall 41
+sysWrite:
+  syscall 42
+sysBlockByUser:
+  syscall 43
+sysUnblock:
+  syscall 44
+sysYield:
+  syscall 45

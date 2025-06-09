@@ -87,14 +87,14 @@ PCBNode* createPCBNode(
 #ifdef BUDDY
     listInit(pcb->heap, pcb->freeList);
 #else
-    pcb->freeListStart = globalMalloc(sizeof(Block));
-    if (pcb->freeListStart == NULL) {
+    pcb->listStart = globalMalloc(sizeof(Block));
+    if (pcb->listStart == NULL) {
       globalFree(node);
       globalFree(pcb);
       globalFree(pcb->heap);
       return NULL;
     }
-    listInit(pcb->heap, pcb->freeListStart, &(pcb->freeListEnd), &(pcb->bytesAvailable));
+    listInit(pcb->heap, pcb->listStart, &(pcb->listEnd), &(pcb->bytesAvailable));
 #endif
   } else pcb->heap = NULL;
   pcb->heapFreed = false;

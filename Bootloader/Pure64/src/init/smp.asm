@@ -59,10 +59,10 @@ smp_send_INIT_done:
 
 	mov rax, [os_Counter_RTC]
 	add rax, 10
-wait1:
+HIGHER_WAIT1:
 	mov rbx, [os_Counter_RTC]
 	cmp rax, rbx
-	jg wait1
+	jg HIGHER_WAIT1
 
 	mov rsi, 0x0000000000005100
 	xor ecx, ecx
@@ -98,10 +98,10 @@ smp_send_SIPI_done:
 ; Let things settle (Give the AP's some time to finish)
 	mov rax, [os_Counter_RTC]
 	add rax, 20
-wait3:
+HIGHER_WAIT3:
 	mov rbx, [os_Counter_RTC]
 	cmp rax, rbx
-	jg wait3
+	jg HIGHER_WAIT3
 
 ; Finish up
 noMP:

@@ -26,28 +26,28 @@ void commandRealTime() {
   sysExit(SUCCESS);
 }
 
-#define COMMANDS_PER_PAGE 10
+#define NUM_COMMANDS 10
 void commandHelp(int32_t argc, char* argv[argc]) {
   int32_t commandCount = arrayLen(commands);
   // Rounded up number of pages.
-  int32_t nbrPages = (commandCount + COMMANDS_PER_PAGE - 1) / COMMANDS_PER_PAGE;
+  int32_t nbrPages = (commandCount + NUM_COMMANDS - 1) / NUM_COMMANDS;
   int32_t page = 1;
   if (argc > 1) page = strToInt(argv[1]);
 
   if (page > nbrPages) {
-    (void)printString("No such page\n");
+    (void)printString("Page does not exist s\n");
     sysExit(ILLEGAL_ARGUMENT);
   }
 
-  printf("Available commands (Page %d/%d)\n", page, nbrPages);
+  printf("Commands in Page: [ %d-%d ]\n", page, nbrPages);
 
-  int32_t startIdx = (page - 1) * COMMANDS_PER_PAGE;
-  int32_t end = startIdx + COMMANDS_PER_PAGE > commandCount ? commandCount : startIdx + COMMANDS_PER_PAGE;
+  int32_t startIdx = (page - 1) * NUM_COMMANDS;
+  int32_t end = startIdx + NUM_COMMANDS > commandCount ? commandCount : startIdx + NUM_COMMANDS;
   for (int32_t i = startIdx; i < end; ++i) {
     ShellCommand* command = getAtArrayIdx(commands, i);
     printf("\t- %s: %s\n", command->name, command->description);
   }
-  printf("Switch between pages with `help [pageNr]`\n");
+  printf("Go to next page with command: help [pageNumber]\n");
   sysExit(SUCCESS);
 }
 
@@ -62,13 +62,13 @@ void commandGetKeyInfo() {
 
 void commandSnakeUsage(char* commandName) {
   puts("Usage:");
-  printf("\t\t%s [options] <player1Name> [player2Name]\n", commandName);
+  printf("\t\t%s [options] <player1Name> <player2Name>\n", commandName);
   printf("Options:\n");
   printf("\t\t--mute    don't play any sounds.\n");
-  printf("Player 1 moves with wasd, player 2 with ijkl. Other keybinds are:\n");
-  printf(" ctrl + r: reset game\n");
-  printf(" ctrl + x: lose game\n");
-  printf(" ctrl + c: exit game\n");
+  printf("Player 1 moves with WASD, player 2 with IJKL. Other keybinds are:\n");
+  printf(" ctrl + r if you want to reset game\n");
+  printf(" ctrl + x if you want to lose game\n");
+  printf(" ctrl + c if you want to exit game\n");
 }
 
 void commandSnake(int argc, char* argv[argc]) {
@@ -239,8 +239,7 @@ void commandKill(int32_t argc, char* argv[argc]) {
   for (int32_t i = 1; i < argc; ++i) {
     int32_t pid = strToInt(argv[i]);
     if (pid == 0) {
-      if (strcmp(argv[i], "0") == 0) printf("https://youtu.be/31g0YE61PLQ?si=G3tv2y_iw8InNCec\n");
-      else printf("Invalid pid: %s\n", argv[i]);
+      printf("Invalid pid: %s\n", argv[i]);
       sysExit(ILLEGAL_ARGUMENT);
     }
     if (!sysKill(pid)) {
@@ -272,7 +271,7 @@ void commandLoop(int32_t argc, char* argv[argc]) {
 void commandNice(int32_t argc, char* argv[argc]) {
   if (argc < 3) {
     puts("Usage:");
-    printf("\t\t%s <pid> <priority between 1-9>\n", argv[0]);
+    printf("\t\t%s <pid> <priority  between 1-9>\n", argv[0]);
     sysExit(MISSING_ARGUMENTS);
   }
   int32_t newPriority = strToInt(argv[2]);
@@ -350,3 +349,45 @@ void commandUnBlock(int32_t argc, char* argv[argc]) {
   sysExit(SUCCESS);
 }
 
+void commandTestPipes(int32_t argc, char* argv[argc]) {
+  uint32_t pid = sysGetPid();
+  int32_t pipe = (int32_t)sysPipeInit();
+  printf("%s - %u - Using pipe: %d\n", argv[0], pid, pipe);
+  const char* argv2[] = {"pipeWriter"};
+  Pipe pipes = {.write = pipe, .read = STDIN, .err = STDERR};
+  int32_t pidWriter = sysCreateProcessWithPipeSwap(1, argv2, pipeWriter, pipes);
+  argv2[0] = "pipeReader";
+  pipes.write = STDOUT;
+  pipes.read = pipe;
+  int32_t pidReader = sysCreateProcessWithPipeSwap(1, argv2, pipeReader, pipes);
+
+  sysWaitPid(pidWriter);
+  char eof = EOF;
+  sysWrite(pipe, &eof, 1);
+  sysWaitPid(pidReader);
+  printf("%s - %u: Destroying pipe...\n", argv[0], pid);
+  sysSleep(1000);
+  if (!sysDestroyPipe(pipe)) {
+    printf("%s - %u - Error destroying pipe: %d\n", argv[0], pid, pipe);
+  }
+
+  sysExit(SUCCESS);
+}
+
+void commandGetMemoryState(int32_t argc, char* argv[argc]) {
+  char* memState;
+  if (argc > 1) {
+    int32_t pid = strToInt(argv[1]);
+    memState = sysGetProcessMemoryState(pid);
+  } else {
+    memState = sysGetGlobalMemoryState();
+  }
+  if (memState == NULL) {
+    printf("Either no process found for given pid or all the memory for current process is being used and memory for "
+           "satate message cannot be allocated.\n");
+    sysExit(ILLEGAL_ARGUMENT);
+  }
+  printf("%s\n", memState);
+  sysFree(memState);
+  sysExit(SUCCESS);
+}
