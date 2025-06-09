@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MAX_NAME_LENGTH 60
+#define MAX_NAME_LENGTH 50
 
 typedef struct {
   uint32_t pid;

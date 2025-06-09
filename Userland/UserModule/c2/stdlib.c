@@ -9,9 +9,23 @@
 
 bool getKey(KeyStruct* key) {
   Pipe pipes = sysFetchPipes();
-  sysRead(pipes.read, &key->character, 1);
+  int read_result = sysRead(pipes.read, &key->character, 1);
+  
+  // Check for read errors or EOF
+  if (read_result <= 0) {
+    return false;
+  }
+  
+  // Skip null characters
+  if (key->character == 0 || (int)key->character == EOF) {
+    return false;
+  }
+  
+  // Get modifier keys - only when we have a valid character to reduce latency
   sysGetModKeys(&key->md);
-  return (int)key->character != EOF;
+  
+  // Signal we have a valid key
+  return true;
 }
 
 char getChar() {
@@ -231,6 +245,10 @@ int printf(const char* fmt, ...) {
         break;
       case 'd':
         printAsBaseWithPadding(va_arg(p, int), 10);
+        paddingLen = 0;
+        break;
+      case 'u':
+        printUintAsBaseWithPadding(va_arg(p, unsigned int), 10);
         paddingLen = 0;
         break;
       case 'l':

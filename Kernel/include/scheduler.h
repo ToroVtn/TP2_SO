@@ -70,7 +70,7 @@ void blockProc();
 void readyProc(const PCB* pcb);
 uint32_t getpid();
 bool kill(uint32_t pid);
-void killCurrentForegroundProcess();
+void killForegroundProc();
 bool setPriority(uint32_t pid, uint8_t newPriority);
 void changePipeRead(int32_t p);
 void changePipeWrite(int32_t p);

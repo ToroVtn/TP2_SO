@@ -7,7 +7,7 @@
 #include <arrayUtils.h>
 #include <semaphores.h>
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 40
 
 #define STDIN 0
 #define STDOUT 1
@@ -19,7 +19,7 @@ typedef struct {
   int32_t consumingIndex;
   int mutex;
   int empty;
-  int full;
+  int written;
   bool deleted;
   // PCB* readerPcb;
   // PCB* writerPcb;

@@ -13,7 +13,7 @@ typedef void (*MapFn)(void* mappedEle, void* ele, uint64_t idx);
 void* initArray(uint64_t elementSize, uint64_t initialCapacity, ElementDestructor elementDestructor, CompareEleFn cmpEleFn);
 void freeArray(Array a);
 void pushToArray(Array a, const void* ele);
-bool popAndGetfromArray(Array a, void* ele);
+bool popAndGetFromArray(Array a, void* ele);
 void popArray(Array a);
 void emptyArray(Array a);
 uint64_t arrayLen(Array a);

@@ -7,7 +7,7 @@
 typedef struct CircularHistoryBufferADT {
   uint64_t size;
   uint64_t readIdx;
-  uint64_t writeIdx;
+  uint64_t producingIndex;
   uint64_t toReadBackwards;
   uint64_t elementSize;
   ElementDestructor freeElemFn;
@@ -26,7 +26,7 @@ CircularHistoryBuffer CHB_initialize(uint64_t elementSize, uint64_t size, Elemen
   cb->array = initArray(elementSize, size, freeElemFn, cmpEleFn);
   cb->size = size;
   cb->readIdx = 0;
-  cb->writeIdx = 0;
+  cb->producingIndex = 0;
   cb->toReadBackwards = 0;
   cb->elementSize = elementSize;
   cb->freeElemFn = freeElemFn;
@@ -37,7 +37,7 @@ CircularHistoryBuffer CHB_initialize(uint64_t elementSize, uint64_t size, Elemen
 void CHB_push(CircularHistoryBuffer cb, void* ele) {
   if (cb == NULL) exitWithError("@CHB_writeNext CHB instance can't be NULL");
   if (arrayLen(cb->array) < cb->size) pushToArray(cb->array, ele);
-  else setAtArrayIdx(cb->array, cb->writeIdx, ele);
+  else setAtArrayIdx(cb->array, cb->producingIndex, ele);
   increaseWriteIdx(cb);
   CHB_readRest(cb);
 }
@@ -60,17 +60,17 @@ void* CHB_readPrev(CircularHistoryBuffer cb) {
 
 void CHB_readRest(CircularHistoryBuffer cb) {
   if (cb == NULL) exitWithError("@CHB_readRest CHB instance can't be NULL");
-  cb->readIdx = cb->writeIdx;
+  cb->readIdx = cb->producingIndex;
   cb->toReadBackwards = arrayLen(cb->array);
 }
 
 // Move 3
 // og seq  : 7, 6, 5, 4, 3, 2, 1
 // expected: 3, 7, 6, 5, 4, 2, 1
-//     writeIdx
+//     producingIndex
 //         v
 // [ 6, 7, 1, 2, 3, 4, 5 ]
-// Move from writeIdx to idx-1 one position forward
+// Move from producingIndex to idx-1 one position forward
 // [ 6, 7, 1, 1, 2, 4, 5 ]
 //            v
 // [ 6, 7, 3, 1, 2, 4, 5 ]
@@ -78,27 +78,27 @@ void CHB_readRest(CircularHistoryBuffer cb) {
 // Move 5
 // og seq  : 7, 6, 5, 4, 3, 2, 1
 // expected: 5, 7, 6, 4, 3, 2, 1
-//           writeIdx
+//           producingIndex
 //               v
 // [ 4, 5, 6, 7, 1, 2, 3 ]
-// Move from idx+1 to writeIdx-1 one position back
+// Move from idx+1 to producingIndex-1 one position back
 // [ 4, 6, 7, 7, 1, 2, 3 ]
 // [ 4, 6, 7, 5, 1, 2, 3 ]
 
 void CHB_moveToFrontOrPush(CircularHistoryBuffer cb, void* ele) {
   int32_t idx = findArray(cb->array, ele);
-  if (idx >= 0 && idx != cb->writeIdx) {
+  if (idx >= 0 && idx != cb->producingIndex) {
     cb->freeElemFn(getAtArrayIdx(cb->array, idx));
-    if (idx < cb->writeIdx) {
+    if (idx < cb->producingIndex) {
       const void* eleArr = arrayData(cb->array);
-      arrayCopyInto(cb->array, idx, eleArr + (idx + 1) * cb->elementSize, cb->writeIdx - (idx + 1), false);
-      arrayCopyInto(cb->array, cb->writeIdx - 1, ele, 1, false);
-    } else if (idx > cb->writeIdx) {
-      uint64_t len = idx - cb->writeIdx;
+      arrayCopyInto(cb->array, idx, eleArr + (idx + 1) * cb->elementSize, cb->producingIndex - (idx + 1), false);
+      arrayCopyInto(cb->array, cb->producingIndex - 1, ele, 1, false);
+    } else if (idx > cb->producingIndex) {
+      uint64_t len = idx - cb->producingIndex;
       const void* eleArr[len * cb->elementSize];
-      copyElemAt(cb->array, cb->writeIdx, len, eleArr);
-      arrayCopyInto(cb->array, cb->writeIdx + 1, eleArr, len, false);
-      arrayCopyInto(cb->array, cb->writeIdx, ele, 1, false);
+      copyElemAt(cb->array, cb->producingIndex, len, eleArr);
+      arrayCopyInto(cb->array, cb->producingIndex + 1, eleArr, len, false);
+      arrayCopyInto(cb->array, cb->producingIndex, ele, 1, false);
       increaseWriteIdx(cb);
     }
     CHB_readRest(cb);
@@ -142,11 +142,11 @@ uint64_t getDecreasedIdxBy(CircularHistoryBuffer cb, uint64_t idx, uint64_t val)
 }
 
 void increaseWriteIdx(CircularHistoryBuffer cb) {
-  cb->writeIdx = getIncreasedIdxBy(cb, cb->writeIdx, 1);
+  cb->producingIndex = getIncreasedIdxBy(cb, cb->producingIndex, 1);
 }
 
 void decreaseWriteIdx(CircularHistoryBuffer cb) {
-  cb->writeIdx = getDecreasedIdxBy(cb, cb->writeIdx, 1);
+  cb->producingIndex = getDecreasedIdxBy(cb, cb->producingIndex, 1);
 }
 
 void increaseReadIdx(CircularHistoryBuffer cb) {

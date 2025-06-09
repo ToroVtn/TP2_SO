@@ -30,6 +30,7 @@ static KeyStruct buffer[KB_BUF_SIZE];
 static ModifierKeys md = {false};
 void readKeyToBuffer() {
   uint8_t code = readKeyCode();
+  
   char c;
   switch (code) {
   case LEFT_SHIFT:
@@ -60,13 +61,18 @@ void readKeyToBuffer() {
     md.capsLockActive = !md.capsLockActive;
     break;
   default:
-    if (code >= LAYOUT_SIZE) return;
+    if (code >= LAYOUT_SIZE) {
+      return;
+    }
     // This makes capslock virtually equivalent to shift, meaning all symbols will get
     // converted, not only letters. That's not the standard behaviour but I actually like it.
     if (md.capsLockActive != (md.leftShiftPressed || md.rightShiftPressed)) 
       c = layoutShiftMaps[kbLayout][code];
     else c = layoutMaps[kbLayout][code];
+    
+    // Debug - skip null characters immediately
     if (c == 0) return;
+    
     if (md.ctrlPressed == true) {
       if (c == 'C' || c == 'c') {
         killForegroundProc();
@@ -75,27 +81,13 @@ void readKeyToBuffer() {
         c = EOF;
       }
     }
+    
+    // Actually write the character to stdin
     writeStdin(c);
   }
 }
 
-void copyModifierKeys(ModifierKeys src, ModifierKeys* dest) {
-  dest->leftShiftPressed = src.leftShiftPressed;
-  dest->rightShiftPressed = src.rightShiftPressed;
-  dest->ctrlPressed = src.ctrlPressed;
-  dest->altPressed = src.altPressed;
-  dest->capsLockActive = src.capsLockActive;
-}
 
-int readKbBuffer(KeyStruct buf[], int len) {
-  int i = 0;
-  while (canRead && i < len) {
-    buf[i++] = buffer[readIdx];
-    readIdx = (readIdx + 1) % KB_BUF_SIZE;
-    if (readIdx == writeIdx) canRead = false;
-  }
-  return i;
-}
 
 void getModKeys(ModifierKeys* dest) {
   dest->leftShiftPressed = md.leftShiftPressed;

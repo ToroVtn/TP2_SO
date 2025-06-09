@@ -69,7 +69,13 @@ int32_t shell() {
 
   KeyStruct key;
   while (true) {
-    getKey(&key);
+    // More efficiently handle key input by only halting when necessary
+    if(!getKey(&key)) {
+      // No key available, halt to wait for interrupt
+      sysHalt();
+      continue;
+    }
+    
     if (key.md.ctrlPressed) {
       switch (toLower(key.character)) {
       case '+':
