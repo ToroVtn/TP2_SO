@@ -60,7 +60,7 @@ void commandTestProcesses(int32_t argc, char* argv[]) {
     while (alive > 0) {
 
       for (rq = 0; rq < max_processes; rq++) {
-        action = GetUniform(100) % 2; //POR ALGUNA RAZON QUE DESCONOZCO DEVUELVE SIEMPRE LO MISMO
+        action = GetUniform(100) % 2; //POR ALGUNA RAZON QUE DESCONOZCO DEVUELVE SIEMPRE LO MISMO (0)
 
         switch (action) {
         case 0:

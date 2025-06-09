@@ -9,6 +9,7 @@ void zeroDivisionException() {
   printExceptionRegisters();
   printNextString("Returning to shell in 10 seconds\n");
   sleep(10000);
+  clearScreen();
 }
 
 void invalidOpcodeException() {

@@ -12,7 +12,7 @@ static Array freedPositions; //Arreglo de posiciones libres
 
 //chequea si encuentra el valor del semaforo dentro de mi arreglo
 
-int initSemArray(){
+void initSemArray(){
     semArray = initArray(sizeof(semaphore), INITIAL_CAPACITY, NULL);
     freedPositions = initArray(sizeof(int32_t), INITIAL_CAPACITY, NULL);
 }
@@ -54,7 +54,7 @@ int findSem(char *name) {
 }
 
 
-int queue(int semId, const PCB* queuedProcess) {
+int queue(int semId, PCB* queuedProcess) {
     semaphore* sem = getAtArrayIdx(semArray, semId);
     if (sem == NULL) {
         return false;
@@ -77,7 +77,7 @@ int queue(int semId, const PCB* queuedProcess) {
 }
 
 
-const PCB* dequeue(int semId) {
+PCB* dequeue(int semId) {
     semaphore* sem = getAtArrayIdx(semArray, semId);
     if (sem == NULL || sem->pcbNodeHead == NULL) {
         return NULL;

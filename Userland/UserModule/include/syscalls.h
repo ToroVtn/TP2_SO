@@ -31,7 +31,7 @@ extern void sysExit(int exitCode);
 extern int sysWaitPid(uint32_t pid);
 extern PCB* sysPCBList(int* len);
 extern int sysCreateSemaphore(char* name, int value);
-extern int sysDestroySemaphore(char* name);
+extern int sysDestroySemaphore(int name);
 extern int sysWaitSem(int semId);
 extern int sysPostSem(int semId);
 extern int sysOpenSem(char* name, int value);

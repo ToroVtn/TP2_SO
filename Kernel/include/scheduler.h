@@ -59,13 +59,13 @@ typedef struct {
 void createPCBList();
 void* schedule(void* rsp);
 uint32_t initUserProc(int argc, char* argv[], void* procRip);
-int32_t initUserProcWithPipeSwap(int32_t argc, const char* argv[], void* processRip, ProcessPipes pipes);
+int32_t initUserProcWithPipeSwap(int32_t argc, char* argv[], void* processRip, ProcessPipes pipes);
 extern void exit(int exitCode);
 void startFirstProcess(void* procAddress);
 void exitProc(int exitCode);
 int waitPid(uint32_t pid);
 userlandPCB* fetchPCBList(int* len);
-const PCB* fetchCurrentPCB();
+PCB* fetchCurrentPCB();
 void blockProc();
 void readyProc(const PCB* pcb);
 uint32_t getpid();

@@ -229,7 +229,7 @@ void* createProc(int argc, char* argv[], void* procRip, ProcessPipes pipes) {
 }
 
 void* initUserModuleProc() {
-  const char* argv[1] = {"init"};
+  char* argv[1] = {"init"};
   ProcessPipes pipes = {.write = STDOUT, .read = STDIN, .err = STDERR};
   void* rsp = createProc(1, argv, userModule, pipes);
   if (rsp == NULL) return NULL;
@@ -240,7 +240,7 @@ void* initUserModuleProc() {
   return rsp;
 }
 
-int32_t initUserProcWithPipeSwap(int32_t argc, const char* argv[], void* processRip, ProcessPipes pipes) {
+int32_t initUserProcWithPipeSwap(int32_t argc, char* argv[], void* processRip, ProcessPipes pipes) {
   if (createProc(argc, argv, processRip, pipes) == NULL) return -1;
   return pid - 1;
 }
@@ -328,7 +328,7 @@ userlandPCB* fetchPCBList(int* len) {
   return pcbArray;
 }
 
-const PCB* fetchCurrentPCB() {
+PCB* fetchCurrentPCB() {
   return pcbList.current->pcb;
 }
 

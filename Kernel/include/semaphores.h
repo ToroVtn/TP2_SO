@@ -14,7 +14,7 @@ extern int enterCritical(int *lock);
 extern int exitCritical(int *lock);
 
 typedef struct PCBNodeSem{
-    const PCB* procPCB;
+    PCB* procPCB;
     struct PCBNodeSem* next;
     struct PCBNodeSem* previous;
 }PCBNodeSem;
@@ -31,7 +31,7 @@ typedef struct semaphore{
 
 int findSem(char* name);
 
-int initSemArray();
+void initSemArray();
 int initSem(unsigned int value);
 
 int createSem(char* name, int value);

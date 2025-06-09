@@ -1,4 +1,5 @@
 #include <videoDriver.h>
+#include <stdint.h>
 
 struct vbe_mode_info_structure {
   uint16_t attributes; // deprecated, only bit 7 should be of interest
@@ -83,11 +84,11 @@ int getCharSeparation() {
 
 static RGBColor* framebuffer;
 void initializeFrameBuffer() {
-  framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
+  framebuffer = (RGBColor*)(uintptr_t)VBE_mode_info->framebuffer;
 }
 
 void printPixel(int x, int y, RGBColor color) {
-  RGBColor* framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
+  RGBColor* framebuffer = (RGBColor*)(uintptr_t)VBE_mode_info->framebuffer;
   uint64_t offset = x + (y * VBE_mode_info->pitch / (VBE_mode_info->bpp / 8));
   framebuffer[offset] = color;
 }
@@ -113,7 +114,7 @@ void printCharXY(int x, int y, char c, int fontSize) {
   c -= ASCII_BF_MIN;
   for (int i = 0; i < ASCII_BF_HEIGHT; ++i) {
     for (int j = 0; j < ASCII_BF_WIDTH; ++j) {
-      if (asciiBitFields[c][i * ASCII_BF_WIDTH + j] != 0) {
+      if (asciiBitFields[(unsigned char)c][i * ASCII_BF_WIDTH + j] != 0) {
         fillRectangle(x + j * fontSize, y + i * fontSize, fontSize, fontSize, fontColor);
       }
     }
@@ -300,7 +301,7 @@ void scrollScreen() {
    
     for (int y = 0; y < lineHeight; y++) {
       for (int x = 0; x < VBE_mode_info->width; x++) {
-        RGBColor* framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
+        RGBColor* framebuffer = (RGBColor*)(uintptr_t)VBE_mode_info->framebuffer;
         uint64_t srcOffset = x + ((srcY + y) * VBE_mode_info->pitch / (VBE_mode_info->bpp / 8));
         uint64_t dstOffset = x + ((dstY + y) * VBE_mode_info->pitch / (VBE_mode_info->bpp / 8));
         framebuffer[dstOffset] = framebuffer[srcOffset];

@@ -18,10 +18,10 @@ KbLayout getLayout() {
   return kbLayout;
 }
 
-static int writeIdx = 0;
-static int readIdx = 0;
+/* static int writeIdx = 0;
+static int readIdx = 0; */
 bool canRead = false;
-static KeyStruct buffer[KB_BUF_SIZE];
+/* static KeyStruct buffer[KB_BUF_SIZE]; */
 
 
 static ModifierKeys md = {false};
