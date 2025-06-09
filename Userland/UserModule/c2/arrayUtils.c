@@ -150,7 +150,7 @@ void concatArray(Array dst, Array src) {
   dst->length += src->length;
 }
 
-const void* arrayData(Array a) {
+void* arrayData(Array a) {
   if (a == NULL) exitWithError("@arrayData Array instance can't be NULL");
   return a->array;
 }

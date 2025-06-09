@@ -50,4 +50,5 @@ extern char* sysGetGlobalMemoryState();
 extern char* sysGetProcessMemoryState(uint32_t pid);
 extern bool sysDestroySemaphoreByName(char* name);
 extern int32_t sysSemInit(uint32_t initialValue);
+extern void sysYield();
 #endif

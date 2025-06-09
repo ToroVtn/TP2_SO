@@ -23,7 +23,7 @@ void commandTestPriority(int32_t argc, char* argv[argc]) {
     sysExit(ILLEGAL_ARGUMENT);
   }
   int64_t pids[TOTAL_PROC];
-  const char* argv2[] = {"commandLoop", argv[1]};
+  char* argv2[] = {"commandLoop", argv[1]};
   uint64_t i;
 
   for (i = 0; i < TOTAL_PROC; i++)

@@ -66,6 +66,7 @@ void historyPrev();
 void historyNext();
 void resetHistoryCurrentVals();
 void clearScreenKeepCommand();
+void printPCBList(PCB* pcbList, int32_t len);
 // void parseCommandOpts(int argc, char argv[argc][MAX_ARG_LEN], int flagCount, CommandOption flags[]);
 
 ExitCode parseCommand();
@@ -103,5 +104,6 @@ void commandCat();
 void commandWC();
 void commandFilter();
 void commandPhylo(int32_t argc, char* argv[argc]);
+void commandTestProcesses(int32_t argc, char* argv[]);
 
 #endif

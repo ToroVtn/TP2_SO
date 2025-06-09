@@ -20,7 +20,7 @@ void printMemState(int32_t pid) {
   uintToBase(pid, pidStr, 10);
   char name[206] = "mem_p";
   strcpy(name + 5, pidStr);
-  const char* argvMem[] = {name, pidStr};
+  char* argvMem[] = {name, pidStr};
   pid = sysCreateProcess(2, argvMem, commandGetMemoryState);
   sysWaitPid(pid);
 }

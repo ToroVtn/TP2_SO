@@ -23,7 +23,7 @@ void arrayCopyInto(Array a, int64_t idx, const void* eleArray, uint64_t length, 
 void setAtArrayIdx(Array a, int64_t idx, void* ele);
 void arrayInfo(Array a);
 void concatArray(Array dst, Array src);
-const void* arrayData(Array a);
+void* arrayData(Array a);
 void arrayCopyTo(Array a, void* eleArr);
 void* arrayCloneAsCArray(Array a);
 bool equalsArray(Array a1, Array a2);

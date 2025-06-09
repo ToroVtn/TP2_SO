@@ -21,13 +21,11 @@ philosopher phylo[PHYLO_MAX];
 int32_t opStatus;
 
 int32_t opMutex;
-
 void allWait() {
   // Just acquire a single mutex for operations instead of blocking all philosophers
   sysWaitSem(opMutex);
 }
 
-// Replace the inefficient freeAll function
 void freeAll() {
   // Just release the operation mutex
   sysPostSem(opMutex);
@@ -37,23 +35,13 @@ int32_t rightFork(int32_t i) {
   return (i + 1) % phylosEating;
 }
 
-/* void allWait() {
-  for (int32_t i = 0; i < phylosEating; i++) {
-    sysWaitSem(phyloSem);
-  }
-} */
 void allWaitForInit(){
   for (int32_t i = 0; i < QUANTITY_PHYLO; i++) {
     sysWaitSem(phyloSem);
   }
 }
 
-/* void freeAll(){
-  for (int32_t i = 0; i < phylosEating; i++) {
-    sysPostSem(phyloSem);
-  }
-}
- */
+ 
 void monitor() {
   sysWaitSem(printMutex);
   for (int32_t i = 0; i < phylosEating; i++) {
@@ -123,7 +111,7 @@ int32_t addPhylo(int32_t pos) {
   phylo[pos].state = THINKING;
   char phyloNum[3];
   uintToBase(pos, phyloNum, 10);
-  const char* argvPhylo[] = {"philosopher", phyloNum};
+  char* argvPhylo[] = {"philosopher", phyloNum};
   phylo[pos].pid = sysCreateProcess(sizeof(argvPhylo) / sizeof(argvPhylo[0]), argvPhylo, phyloLoop);
   phylosEating++;
   
@@ -220,7 +208,7 @@ void commandPhylo(int32_t argc, char* argv[argc]) {
   for (int32_t i = 0; i < QUANTITY_PHYLO; i++) {
     char philo_num[3];
     uintToBase(i, philo_num, 10);
-    const char* argv_phylo[] = {"philosopher", philo_num};
+    char* argv_phylo[] = {"philosopher", philo_num};
     phylo[i].pid = sysCreateProcess(sizeof(argv_phylo) / sizeof(argv_phylo[0]), argv_phylo, phyloLoop);
     printf("Philosopher number %d has joined the table\n", i + 1);
   }

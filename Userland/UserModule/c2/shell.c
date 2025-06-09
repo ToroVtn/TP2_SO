@@ -67,11 +67,12 @@ int32_t shell() {
   addCommand("testMM", "Test Memory manager.", commandTestMM);
   addCommand("memState", "Get the memory state of the current process or a specified pid.", commandGetMemoryState);
   addCommand("testSem", "Test semaphores by using multiple processes to\n modifying shared variable.", commandTestSem);
+  addCommand("testProcesses", "Checks the process creation, blocking,\n" "unblocking and destruction", commandTestProcesses);
   addCommand("cat", "Read from stdin and output to stdout", commandCat);
   addCommand("wc", "Word counts  from stdin", commandWC);
   addCommand("filter", "Return given array filtering voewls", commandFilter);
 
-  const char* argv[1] = {"help"};
+  char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
 
   newPrompt();
@@ -373,7 +374,7 @@ ExitCode parseCommand() {
     setArgsNullTerminaor(argv);
     command = verifyCommand(argv);
     if (command != NULL) {
-      const char* realArgv[argc];
+      char* realArgv[argc];
       for (int32_t i = 0; i < argc; ++i) {
         realArgv[i] = arrayData(*(Array*)getAtArrayIdx(argv, i));
       }
