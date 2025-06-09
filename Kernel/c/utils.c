@@ -1,10 +1,10 @@
 #include <utils.h>
 
-int strcpy(char* dst, const char* src) {
+int strcpy(char* dst, char* src) {
   return strncpy(dst, src, 0);
 }
 
-int strncpy(char* dst, const char* src, int max) {
+int strncpy(char* dst, char* src, int max) {
   int i = 0;
   if (max > 0) for (; i < max && src[i] != 0; ++i) dst[i] = src[i];
   else for (; src[i] != 0; ++i) dst[i] = src[i];
@@ -12,12 +12,12 @@ int strncpy(char* dst, const char* src, int max) {
   return i;
 }
 
-unsigned int strlen(const char* s) {
+unsigned int strlen(char* s) {
     int len = 0;
     while (s[len++] != 0);
     return len - 1;
 }
-int strCmp(const char* s1, const char* s2) {
+int strcmp(  char* s1,   char* s2) {
     int i = 0;
     for (; s1[i] != 0 && s2[i] != 0; ++i) {
         if (s1[i] < s2[i]) return -1;
@@ -28,7 +28,7 @@ int strCmp(const char* s1, const char* s2) {
     else return 0;
 }
 
-char* strcat(char* dest, const char* src) {
+char* strcat(char* dest,   char* src) {
     char* originalDest = dest;
     
     // Find the end of dest string

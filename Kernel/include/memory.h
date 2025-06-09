@@ -34,6 +34,7 @@ void free(void* ptr);
 void globalFree(void * ptr);
 void memoryInit(void* heapStart);
 void allocateStack(void** rspStart, void** rspEnd);
+void* realloc(void* ptr, uint64_t oldSize, uint64_t newSize);
 
 void getMemState();
 void getGlobalMemState();

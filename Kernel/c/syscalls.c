@@ -10,9 +10,11 @@
 #include <timer.h>
 #include <videoDriver.h>
 #include <semaphores.h>
+#include <pipes.h>
+#include <lib.h>
 
 /*
- * There should be stdin, stdout and stderr global variables and read/write syscalls that get/set them.
+ * There should be stdin, STDOUT and stderr global variables and read/write syscalls that get/set them.
  */
 
 static SyscallFunction syscalls[] = {
@@ -22,7 +24,8 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)setLayout,
     (SyscallFunction)setFontSize,
     (SyscallFunction)setColor,
-    (SyscallFunction)readKbBuffer,
+    (SyscallFunction)getModKeys,
+    //(SyscallFunction)readKbBuffer,
     (SyscallFunction)printCharXY,
     (SyscallFunction)printNextChar,
     (SyscallFunction)moveCursor,
@@ -34,16 +37,31 @@ static SyscallFunction syscalls[] = {
     (SyscallFunction)malloc,
     (SyscallFunction)free,
     (SyscallFunction)initUserProc,
-    (SyscallFunction)exit,
+    (SyscallFunction)initUserProcWithPipeSwap,
+    (SyscallFunction)exitProc,
     (SyscallFunction)waitPid,
     (SyscallFunction)fetchPCBList,
-    (SyscallFunction)createSemaphore,
+    (SyscallFunction)createSem,
     (SyscallFunction)destroySemaphore,
     (SyscallFunction)waitSemaphore,
     (SyscallFunction)postSemaphore,
     (SyscallFunction)openSemaphore,
+    (SyscallFunction)memcpy,
     (SyscallFunction)getpid,
     (SyscallFunction)kill,
+    (SyscallFunction)sleep,
+    (SyscallFunction)setPriority,
+    (SyscallFunction)createPipe,
+    (SyscallFunction)deletePipe,
+    (SyscallFunction)changePipeRead,
+    (SyscallFunction)changePipeWrite,
+    (SyscallFunction)fetchPipes,
+    (SyscallFunction)read,
+    (SyscallFunction)write,
+    (SyscallFunction)block,
+    (SyscallFunction)unBlock,
+    (SyscallFunction)yield
+
 };
 
 SyscallFunction* getSyscallsArray() {

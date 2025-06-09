@@ -1,4 +1,5 @@
 #include <memory.h>
+#include <lib.h>
 
 // 4KB stack size
 static const int stackSize = (1 << 10) * 4;
@@ -30,6 +31,15 @@ rsp = (e - 8) & ~7
                                     s >>   
 0x00000000000503f0  00 00 00 00 00 00 00 00
  */
+
+ void* realloc(void* ptr, uint64_t oldSize, uint64_t newSize) {
+  void* mem = globalMalloc(newSize);
+  if (mem == NULL) return NULL;
+  memcpy(mem, ptr, oldSize);
+  globalFree(ptr);
+  return mem;
+}
+
 void allocateStack(void** stackBase, void** stackTop) {
   *stackTop = globalMalloc(stackSize);
   *stackBase = *stackTop + stackSize - 1;
