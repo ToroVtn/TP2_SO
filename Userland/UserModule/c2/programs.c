@@ -391,3 +391,57 @@ void commandGetMemoryState(int32_t argc, char* argv[argc]) {
   sysFree(memState);
   sysExit(SUCCESS);
 }
+
+void commandCat() {
+  signed char c;
+  while ((int)(c = getChar()) != EOF) {
+    if (printChar(c) < 0) sysExit(PROCESS_FAILURE);
+  }
+  sysExit(SUCCESS);
+}
+
+void commandWC() {
+  signed char c;
+  int32_t words = 0;
+  int32_t lines = 0;
+  bool inWord = false;
+  bool lastReadNewLine = false;
+
+  while ((int)(c = getChar()) != EOF) {
+    lastReadNewLine = false;
+    if (c == ' ' || c == '\n') {
+      if (inWord) {
+        ++words;
+        inWord = false;
+      }
+      if (c == '\n') {
+        ++lines;
+        lastReadNewLine = true;
+      }
+    } else inWord = true;
+    if (printChar(c) < 0) sysExit(PROCESS_FAILURE);
+  }
+  if (inWord) ++words;
+  if (!lastReadNewLine) ++lines;
+
+  printf("\nWord count: %d\n", words);
+  printf("Line count: %d\n", lines);
+
+  sysExit(SUCCESS);
+}
+
+int32_t charIsAVowel(char c) {
+  return (
+      c == 'a' || c == 'A' || c == 'e' || c == 'E' || c == 'i' || c == 'I' || c == 'o' || c == 'O' || c == 'u' ||
+      c == 'U'
+  );
+}
+
+void commandFilter() {
+  signed char c;
+  while ((int)(c = getChar()) != EOF) {
+    if (!charIsAVowel(c)) printf("%c", c);
+  }
+  printf("\n");
+  sysExit(SUCCESS);
+}

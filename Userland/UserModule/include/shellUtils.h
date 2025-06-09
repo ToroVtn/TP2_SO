@@ -99,6 +99,9 @@ void commandTestPipes(int32_t argc, char* argv[argc]);
 void commandTestPriority(int32_t argc, char* argv[argc]);
 void commandGetMemoryState(int32_t argc, char* argv[argc]);
 void commandTestSem(int32_t argc, char* argv[argc]);
-
+void commandCat();
+void commandWC();
+void commandFilter();
+void commandPhylo(int32_t argc, char* argv[argc]);
 
 #endif

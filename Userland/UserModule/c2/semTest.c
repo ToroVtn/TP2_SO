@@ -41,7 +41,7 @@ void my_process_inc(uint64_t argc, char* argv[argc]) {
   } else {
     for (int32_t i = 0; i < n; i++) slowInc(&globalForSemTest, inc);
   }
-  printf("Final value in process: %li\n", globalForSemTest);
+  printf("Final value in process: %l\n", globalForSemTest);
   sysExit(SUCCESS);
 }
 
@@ -71,7 +71,7 @@ void commandTestSem(int32_t argc, char* argv[argc]) {
     sysWaitPid(pids[i + TOTAL_PAIR_PROCESSES]);
   }
 
-  printf("Final value: %li\n", globalForSemTest);
+  printf("Final value: %l\n", globalForSemTest);
   sysDestroySemaphore(sem);
   sysExit(SUCCESS);
 }

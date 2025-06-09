@@ -62,10 +62,14 @@ int32_t shell() {
   addCommand("block", "Blocks the specified process", commandBlock);
   addCommand("unblock", "Unblocks the specified process", commandUnBlock);
   addCommand("testPipe", "Test the pipe system with a writer and a reader process.", commandTestPipes);
+  addCommand("phylo","Starts the philosophers problem.\n""    `e` to Exit, `a` to Add philosopher, `r` to Remove philosopher",commandPhylo);
   addCommand("testPriority", "Test the process priority system, 0 for small wait, 1 for long wait.", commandTestPriority);
   addCommand("testMM", "Test Memory manager.", commandTestMM);
   addCommand("memState", "Get the memory state of the current process or a specified pid.", commandGetMemoryState);
   addCommand("testSem", "Test semaphores by using multiple processes to\n modifying shared variable.", commandTestSem);
+  addCommand("cat", "Read from stdin and output to stdout", commandCat);
+  addCommand("wc", "Word counts  from stdin", commandWC);
+  addCommand("filter", "Return given array filtering voewls", commandFilter);
 
   const char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));

@@ -45,6 +45,7 @@ global sysUnblock
 global sysYield
 global sysGetGlobalMemoryState
 global sysGetProcessMemoryState
+global sysSemInit
 
 
 
