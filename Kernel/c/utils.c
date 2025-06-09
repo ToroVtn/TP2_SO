@@ -31,19 +31,18 @@ int strcmp(  char* s1,   char* s2) {
 char* strcat(char* dest,   char* src) {
     char* originalDest = dest;
     
-    // Find the end of dest string
+   
     while (*dest != '\0') {
         dest++;
     }
     
-    // Copy src to the end of dest
     while (*src != '\0') {
         *dest = *src;
         dest++;
         src++;
     }
     
-    // Add null terminator
+   
     *dest = '\0';
     
     return originalDest;

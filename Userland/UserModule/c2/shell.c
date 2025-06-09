@@ -32,8 +32,10 @@ int32_t shell() {
   clearScreen();
 
   currentCommand = initArray(sizeof(char), 100, NULL, NULL);
-  commandHistory = CHB_initialize(sizeof(Array), MAX_HISTORY_LEN, (ElementDestructor)freeArrayPtr, (CompareEleFn)compareArgv);
+  commandHistory = initCHB(sizeof(Array), MAX_HISTORY_LEN, (ElementDestructor)freeArrayPtr, (CompareEleFn)compareArgv);
   commands = initArray(sizeof(ShellCommand), 100, NULL, NULL);
+
+  
 
   addCommand("help", "List all commands and their descriptions.", commandHelp);
   addCommand("echo", "Print all arguments.", commandEcho);
@@ -48,18 +50,17 @@ int32_t shell() {
       commandGetRegisters
   );
   ;
+  addCommand("snake", "Play the snake game.\n", commandSnake);
   addCommand("zeroDivisionError", "Test the zero division error.", commandZeroDivisionError);
   addCommand("invalidOpcodeError", "Test the invalid opcode error.", commandInvalidOpcodeError);
-  addCommand("ps", "Print process list.", commandPs);
-  /* addCommand("testSem", "Test semaphores by using multiple processes to\n"
-      "    modifying shared variable.", commandTestSem); */
-  /* addCommand("testMM", "Test Memory manager.", commandTestMM); */
-  addCommand("kill", "Kill process by pid.", commandKill);
-  addCommand("nice", "Change priority of a process by pid", commandNice);
-  addCommand("loop", "Sends a message with the PID every given seconds", commandLoop);
+  addCommand("ps", "Prints the current running processes.", commandPs);
   
-  addCommand("block", "Blocks the process with the pid given", commandBlock);
-  addCommand("unblock", "Unblocks the process with the pid given", commandUnBlock);
+  addCommand("kill", "Kill process by specified pid.", commandKill);
+  addCommand("nice", "Change the priority of a process with a specified pid", commandNice);
+  addCommand("loop", "Prints its pid every <arg> seconds ", commandLoop);
+  
+  addCommand("block", "Blocks the specified process", commandBlock);
+  addCommand("unblock", "Unblocks the specified process", commandUnBlock);
   
 
   const char* argv[1] = {"help"};
@@ -69,9 +70,9 @@ int32_t shell() {
 
   KeyStruct key;
   while (true) {
-    // More efficiently handle key input by only halting when necessary
+    
     if(!getKey(&key)) {
-      // No key available, halt to wait for interrupt
+     
       sysHalt();
       continue;
     }
@@ -143,15 +144,15 @@ void historyCopy(Array argv) {
   }
 }
 void historyPrev() {
-  Array* argv = CHB_readPrev(commandHistory);
+  Array* argv = readPrevFromCHB(commandHistory);
   if (argv == NULL) return;
   historyCopy(*argv);
 }
 void historyNext() {
-  Array* argv = CHB_readNext(commandHistory);
+  Array* argv = readNextFromCHB(commandHistory);
   if (argv == NULL) {
     clearLine();
-    CHB_readRest(commandHistory);
+    readRestFromCHB(commandHistory);
     return;
   }
   historyCopy(*argv);
@@ -379,6 +380,6 @@ ExitCode parseCommand() {
       }
     } else ret = COMMAND_NOT_FOUND;
   }
-  CHB_moveToFrontOrPush(commandHistory, &argv);
+  moveTofrontOrPushCHB(commandHistory, &argv);
   return ret;
 }

@@ -6,16 +6,16 @@
 
 typedef struct CircularHistoryBufferADT* CircularHistoryBuffer;
 
-CircularHistoryBuffer CHB_initialize(uint64_t elementSize, uint64_t size, ElementDestructor ElementDestructor, CompareEleFn cmpEleFn);
-void CHB_push(CircularHistoryBuffer cb, void* ele);
-void* CHB_readNext(CircularHistoryBuffer cb);
-void* CHB_readPrev(CircularHistoryBuffer cb);
-void CHB_readRest(CircularHistoryBuffer cb);
-void CHB_moveToFrontOrPush(CircularHistoryBuffer cb, void* ele);
-uint64_t CHB_getLen(CircularHistoryBuffer cb);
-uint64_t CHB_getSize(CircularHistoryBuffer cb);
-void CHB_free(CircularHistoryBuffer cb);
+CircularHistoryBuffer initCHB(uint64_t elementSize, uint64_t size, ElementDestructor ElementDestructor, CompareEleFn cmpEleFn);
+void pushToCHB(CircularHistoryBuffer cb, void* ele);
+void* readNextFromCHB(CircularHistoryBuffer cb);
+void* readPrevFromCHB(CircularHistoryBuffer cb);
+void readRestFromCHB(CircularHistoryBuffer cb);
+void moveTofrontOrPushCHB(CircularHistoryBuffer cb, void* ele);
+uint64_t getCHBLen(CircularHistoryBuffer cb);
+uint64_t getCHBSize(CircularHistoryBuffer cb);
+void freeCHB(CircularHistoryBuffer cb);
 void CHB_printState(CircularHistoryBuffer cb);
-bool CHB_has(CircularHistoryBuffer cb, void* ele);
+bool containsCHB(CircularHistoryBuffer cb, void* ele);
 
 #endif

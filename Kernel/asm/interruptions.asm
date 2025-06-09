@@ -56,7 +56,7 @@ KBIrqHandler:
 .captureRegisters:
   push rax
   call readKeyCode
-  cmp al, 0x3b ; f1 para sacar captura de los registros
+  cmp al, 0x3b 
   jne .nextProc
   pop rax
   pushState

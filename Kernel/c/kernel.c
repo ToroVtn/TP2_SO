@@ -8,9 +8,7 @@
 #include <scheduler.h>
 #include <semaphores.h>
 
-// extern uint8_t kernelText;
-// extern uint8_t kernelRodata;
-// extern uint8_t kernelData;
+
 extern uint8_t kernelBss;
 extern uint8_t endOfKernelBinary;
 extern uint8_t endOfKernel;
@@ -29,7 +27,7 @@ void clearBSS(void* bssAddress, uint64_t bssSize) {
 }
 
 void* getStackBase() {
-  //Calculate the stack base address by taking the end of the kernel binary
+  
   return (void*)((uint64_t)&endOfKernel + PageSize * 8 - sizeof(uint64_t));
 }
 
@@ -53,7 +51,6 @@ int main() {
   createPCBList();
   initSemArray();
 
-  // userModule();
   initUserModule();
 
 

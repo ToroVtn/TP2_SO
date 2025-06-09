@@ -292,12 +292,12 @@ void clearScreen() {
 void scrollScreen() {
   int lineHeight = ASCII_BF_HEIGHT * fontSize + charSeparation;
   
-  // Move all rows up by one line
+  
   for (int row = 1; row < fontRows; row++) {
     int srcY = row * lineHeight;
     int dstY = (row - 1) * lineHeight;
     
-    // Copy entire row of pixels
+   
     for (int y = 0; y < lineHeight; y++) {
       for (int x = 0; x < VBE_mode_info->width; x++) {
         RGBColor* framebuffer = (RGBColor*)VBE_mode_info->framebuffer;
@@ -308,11 +308,11 @@ void scrollScreen() {
     }
   }
   
-  // Clear the bottom row
+  
   int lastRowY = (fontRows - 1) * lineHeight;
   fillRectangle(0, lastRowY, VBE_mode_info->width, lineHeight, bgColor);
   
-  // Move cursor to beginning of last row
+  
   moveCursor(0, fontRows - 1);
 }
 
@@ -321,17 +321,17 @@ static uint32_t uintToBase(uint64_t value, char* buffer, uint32_t base) {
   char *p1, *p2;
   uint32_t digits = 0;
 
-  // Calculate characters for each digit
+  
   do {
     uint32_t remainder = value % base;
     *p++ = (remainder < 10) ? remainder + '0' : remainder + 'A' - 10;
     digits++;
   } while (value /= base);
 
-  // Terminate string in buffer.
+ 
   *p = 0;
 
-  // Reverse string in buffer.
+  
   p1 = buffer;
   p2 = p - 1;
   while (p1 < p2) {

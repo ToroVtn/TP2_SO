@@ -2,7 +2,7 @@ section .text
 global playSound
 global noSound
 
-; fuente: (https://wiki.osdev.org/PC_Speaker)
+
 
 playSound:
     ; void playSound(uint32_t nFrequence)

@@ -20,9 +20,9 @@ void decreaseWriteIdx(CircularHistoryBuffer cb);
 void increaseReadIdx(CircularHistoryBuffer cb);
 void decreaseReadIdx(CircularHistoryBuffer cb);
 
-CircularHistoryBuffer CHB_initialize(uint64_t elementSize, uint64_t size, ElementDestructor freeElemFn, CompareEleFn cmpEleFn) {
+CircularHistoryBuffer initCHB(uint64_t elementSize, uint64_t size, ElementDestructor freeElemFn, CompareEleFn cmpEleFn) {
   CircularHistoryBuffer cb = sysMalloc(sizeof(CircularHistoryBufferADT));
-  if (cb == NULL) exitWithError("@CHB_initialize malloc error");
+  if (cb == NULL) exitWithError("@initCHB malloc error");
   cb->array = initArray(elementSize, size, freeElemFn, cmpEleFn);
   cb->size = size;
   cb->readIdx = 0;
@@ -34,58 +34,38 @@ CircularHistoryBuffer CHB_initialize(uint64_t elementSize, uint64_t size, Elemen
   return cb;
 }
 
-void CHB_push(CircularHistoryBuffer cb, void* ele) {
+void pushToCHB(CircularHistoryBuffer cb, void* ele) {
   if (cb == NULL) exitWithError("@CHB_writeNext CHB instance can't be NULL");
   if (arrayLen(cb->array) < cb->size) pushToArray(cb->array, ele);
   else setAtArrayIdx(cb->array, cb->producingIndex, ele);
   increaseWriteIdx(cb);
-  CHB_readRest(cb);
+  readRestFromCHB(cb);
 }
 
-void* CHB_readNext(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_readNext CHB instance can't be NULL");
+void* readNextFromCHB(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@readNextFromCHB CHB instance can't be NULL");
   if (cb->toReadBackwards + 1 >= arrayLen(cb->array)) return NULL;
   increaseReadIdx(cb);
   ++cb->toReadBackwards;
   return getAtArrayIdx(cb->array, cb->readIdx);
 }
 
-void* CHB_readPrev(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_readPrev CHB instance can't be NULL");
+void* readPrevFromCHB(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@readPrevFromCHB CHB instance can't be NULL");
   if (cb->toReadBackwards == 0) return NULL;
   decreaseReadIdx(cb);
   --cb->toReadBackwards;
   return getAtArrayIdx(cb->array, cb->readIdx);
 }
 
-void CHB_readRest(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_readRest CHB instance can't be NULL");
+void readRestFromCHB(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@readRestFromCHB CHB instance can't be NULL");
   cb->readIdx = cb->producingIndex;
   cb->toReadBackwards = arrayLen(cb->array);
 }
 
-// Move 3
-// og seq  : 7, 6, 5, 4, 3, 2, 1
-// expected: 3, 7, 6, 5, 4, 2, 1
-//     producingIndex
-//         v
-// [ 6, 7, 1, 2, 3, 4, 5 ]
-// Move from producingIndex to idx-1 one position forward
-// [ 6, 7, 1, 1, 2, 4, 5 ]
-//            v
-// [ 6, 7, 3, 1, 2, 4, 5 ]
 
-// Move 5
-// og seq  : 7, 6, 5, 4, 3, 2, 1
-// expected: 5, 7, 6, 4, 3, 2, 1
-//           producingIndex
-//               v
-// [ 4, 5, 6, 7, 1, 2, 3 ]
-// Move from idx+1 to producingIndex-1 one position back
-// [ 4, 6, 7, 7, 1, 2, 3 ]
-// [ 4, 6, 7, 5, 1, 2, 3 ]
-
-void CHB_moveToFrontOrPush(CircularHistoryBuffer cb, void* ele) {
+void moveTofrontOrPushCHB(CircularHistoryBuffer cb, void* ele) {
   int32_t idx = findArray(cb->array, ele);
   if (idx >= 0 && idx != cb->producingIndex) {
     cb->freeElemFn(getAtArrayIdx(cb->array, idx));
@@ -101,30 +81,30 @@ void CHB_moveToFrontOrPush(CircularHistoryBuffer cb, void* ele) {
       arrayCopyInto(cb->array, cb->producingIndex, ele, 1, false);
       increaseWriteIdx(cb);
     }
-    CHB_readRest(cb);
+    readRestFromCHB(cb);
   } else {
-    CHB_push(cb, ele);
+    pushToCHB(cb, ele);
   }
 }
 
-uint64_t CHB_getLen(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_getLen CHB instance can't be NULL");
+uint64_t getCHBLen(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@getCHBLen CHB instance can't be NULL");
   return cb->toReadBackwards;
 }
 
-uint64_t CHB_getSize(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_getSize CHB instance can't be NULL");
+uint64_t getCHBSize(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@getCHBSize CHB instance can't be NULL");
   return cb->size;
 }
 
-void CHB_free(CircularHistoryBuffer cb) {
-  if (cb == NULL) exitWithError("@CHB_free CHB instance can't be NULL");
+void freeCHB(CircularHistoryBuffer cb) {
+  if (cb == NULL) exitWithError("@freeCHB CHB instance can't be NULL");
   freeArray(cb->array);
   sysFree(cb);
 }
 
-bool CHB_has(CircularHistoryBuffer cb, void* ele) {
-  if (cb == NULL) exitWithError("@CHB_has CHB instance can't be NULL");
+bool containsCHB(CircularHistoryBuffer cb, void* ele) {
+  if (cb == NULL) exitWithError("@containsCHB CHB instance can't be NULL");
   return hasArray(cb->array, ele);
 }
 

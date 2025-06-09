@@ -17,8 +17,7 @@ uint64_t* getExceptionRegisterValues() {
 void getRegisters(Register regs[REGISTER_QUANTITY]) {
   for (int i = 0; i < REGISTER_QUANTITY; i++) {
     for (int j = 0; j < STR_LEN; j++) {
-      // debería almacenar el 0/, hago esto porque no me deja hacer
-      // asignación directa, así que hago un strCopy manual
+      
       regs[i].name[j] = registerNames[i][j];
     }
     regs[i].value = registerValues[i];

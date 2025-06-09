@@ -6,6 +6,8 @@
 #include <videoDriver.h>
 
 
+#define IDLE_PID -1
+
 typedef struct PCBNode {
   PCB* pcb;
   struct PCBNode* next;
@@ -21,7 +23,6 @@ typedef struct {
 
 const char* const stateNames[6] = {"READY", "RUNNING", "BLOCKED", "EXITED", "W-EXIT", "USER_BLOCKED"};
 
-#define IDLE_PID -1
 
 extern void* initStack(int argc, char* argv[], void* procRip, void* stackBase);
 extern void idleProc();
@@ -44,9 +45,7 @@ PCB* createPCB(uint32_t pid, uint8_t priority, State state, void* stack, void* r
   pcb->rsp = rsp;
   pcb->rbp = rbp;
   pcb->name = name;
-  // pcb->exitCode = 0;
   pcb->waitingPCBCount = 0;
-
   pcb->pipes.read = STDIN;
   pcb->pipes.write = STDOUT;
   pcb->pipes.err = STDERR;
@@ -58,7 +57,9 @@ PCBNode* createPCBNode(
     uint32_t pid, uint8_t priority, State state, void* stack, void* rsp, void* rbp, char* name, ProcessPipes pipes
 ) {
   PCBNode* node = globalMalloc(sizeof(PCBNode));
-  if (node == NULL) return NULL;
+  if (node == NULL) {
+    return NULL;
+  }
   node->next = NULL;
 
   PCB* pcb = globalMalloc(sizeof(PCB));
@@ -102,11 +103,7 @@ PCBNode* createPCBNode(
   return node;
 }
 
-// void freePCBNode(PCBNode* node) {
-//   globalFree(node->pcb);
-//   globalFree(node->stack);
-//   globalFree(node);
-// }
+
 
 bool addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name, ProcessPipes pipes) {
   PCBNode* node = createPCBNode(pid, 1, READY, stack, rsp, rbp, name, pipes);
@@ -127,16 +124,23 @@ bool addPCB(uint32_t pid, void* stack, void* rsp, void* rbp, char* name, Process
 }
 
 void freeCurrent() {
-  if (pcbList.current == NULL || pcbList.head == NULL) return;
-  if (pcbList.head == pcbList.tail) return;
+  if (pcbList.current == NULL || pcbList.head == NULL){
+    return;
+  } 
+  if (pcbList.head == pcbList.tail) {
+    return;
+  }
 
   PCBNode* toRemove = pcbList.current;
 
   pcbList.current = toRemove->next;
   pcbList.previous->next = pcbList.current;
-  if (pcbList.head == toRemove) pcbList.head = pcbList.current;
-  else if (pcbList.tail == toRemove) pcbList.tail = pcbList.previous;
-
+  if (pcbList.head == toRemove){
+    pcbList.head = pcbList.current;
+  }
+  else if (pcbList.tail == toRemove) {
+    pcbList.tail = pcbList.previous;
+  }
   globalFree(toRemove->pcb->stack);
   globalFree(toRemove->pcb);
   globalFree(toRemove);
@@ -145,7 +149,9 @@ void freeCurrent() {
 }
 
 void nextPCB() {
-  if (pcbList.head == NULL) return;
+  if (pcbList.head == NULL) {
+    return;
+  }
   if (pcbList.current == NULL) {
     pcbList.current = pcbList.head;
     pcbList.previous = pcbList.tail;
@@ -164,7 +170,6 @@ void createPCBList() {
   void* rsp = initStack(0, NULL, idleProc, stackBase);
   ProcessPipes pipes = {.write = STDOUT, .read = STDIN, .err = STDERR};
   idleProcPCBNode = createPCBNode(-1, 1, READY, stackTop, rsp, rsp, "idle", pipes);
-
   pcbList.head = NULL;
   pcbList.tail = NULL;
   pcbList.current = NULL;
@@ -175,7 +180,6 @@ void createPCBList() {
 
 void* schedule(void* rsp) {
   static int quantumsLeft = 0;
-
   pcbList.current->pcb->rsp = rsp;
   pcbList.current->pcb->rbp = *(void**)(rsp + 8 * 8);
 
@@ -206,6 +210,7 @@ void* schedule(void* rsp) {
     }
   }
 }
+
 static uint32_t pid = 0;
 void* createProc(int argc, char* argv[], void* procRip, ProcessPipes pipes) {
   void* stackBase;
@@ -231,7 +236,7 @@ void* initUserModuleProc() {
   nextPCB();
   processInForeground = pcbList.current->pcb;
   pcbList.current->pcb->parent = NULL;
-  //initializeSpeaker();
+ 
   return rsp;
 }
 
@@ -246,7 +251,7 @@ uint32_t initUserProc(int argc, char* argv[], void* procRip) {
   return pid - 1;
 }
 
-//QUIZAS HAY QUE CAMBIAR
+
 void exitProcessByPCB(PCB* pcb, int32_t exitCode) {
   if (pcb->state == EXITED) return;
   if (pcb->state == BLOCKED) {

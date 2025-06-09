@@ -47,7 +47,6 @@ extern void haltTillNextInterruption();
 extern void picMask(uint16_t mask);
 
 void irqDispatcher(uint8_t index);
-// void setupIdtEntry(int index, InterruptionFunction irqHandler);
 void setupIdtEntry(int index, void* irqHandler);
 void loadIdt();
 

@@ -59,6 +59,49 @@ void commandGetKeyInfo() {
   sysExit(SUCCESS);
 }
 
+
+void commandSnakeUsage(char* commandName) {
+  puts("Usage:");
+  printf("\t\t%s [options] <player1Name> [player2Name]\n", commandName);
+  printf("Options:\n");
+  printf("\t\t--mute    don't play any sounds.\n");
+  printf("Player 1 moves with wasd, player 2 with ijkl. Other keybinds are:\n");
+  printf(" ctrl + r: reset game\n");
+  printf(" ctrl + x: lose game\n");
+  printf(" ctrl + c: exit game\n");
+}
+
+void commandSnake(int argc, char* argv[argc]) {
+  if (argc < 2) {
+    commandSnakeUsage(argv[0]);
+    sysExit(MISSING_ARGUMENTS);
+  } else {
+    int argIdx = 1;
+    int playerCount = argc - 1;
+    bool mute = false;
+    if (strcmp(argv[argIdx], "--mute") == 0) {
+      mute = true;
+      ++argIdx;
+      --playerCount;
+    }
+    if (playerCount < 1) {
+      commandSnakeUsage(argv[0]);
+      sysExit(MISSING_ARGUMENTS);
+    }
+    uint32_t fontColor = getFontColor();
+    uint32_t bgColor = getBgColor();
+    uint32_t cursorColor = getCursorColor();
+    if (playerCount == 1) {
+      snake(false, argv[argIdx], "", mute);
+    } else {
+      snake(true, argv[argIdx], argv[argIdx + 1], mute);
+    }
+    setShellColors(fontColor, bgColor, cursorColor);
+  }
+  repaint();
+  sysExit(SUCCESS);
+}
+
 // argc aka rdi is arriving as 0 for some reason.
 void commandRand(int32_t argc, char* argv[argc]) {
   static bool randInitialized = false;
@@ -208,23 +251,6 @@ void commandKill(int32_t argc, char* argv[argc]) {
   sysExit(SUCCESS);
 }
 
-/* void commandGetMemoryState(int32_t argc, char* argv[argc]) {
-  char* memState;
-  if (argc > 1) {
-    int32_t pid = strToInt(argv[1]);
-    memState = sysGetProcessMemoryState(pid);
-  } else {
-    memState = sysGetGlobalMemoryState();
-  }
-  if (memState == NULL) {
-    printf("Either no process found for given pid or all the memory for current process is being used and memory for "
-           "satate message cannot be allocated.\n");
-    sysExit(ILLEGAL_ARGUMENT);
-  }
-  printf("%s\n", memState);
-  sysFree(memState);
-  sysExit(SUCCESS);
-} */
 
 void commandLoop(int32_t argc, char* argv[argc]) {
   if (argc < 2) {
@@ -293,28 +319,7 @@ void pipeReader(int32_t argc, char* argv[argc]) {
   printf("%s - %u: Found EOF\n", argv[0], pid);
   sysExit(SUCCESS);
 }
-/* void commandTestPipes(int32_t argc, char* argv[argc]) {
-  uint32_t pid = sysGetPid();
-  int32_t pipe = (int32_t)sysPipeInit();
-  printf("%s - %u - Using pipe: %d\n", argv[0], pid, pipe);
-  const char* argv2[] = {"pipeWriter"};
-  Pipe pipes = {.write = pipe, .read = STDIN, .err = STDERR};
-  int32_t pidWriter = sysCreateProcessWithPipeSwap(1, argv2, pipeWriter, pipes);
-  argv2[0] = "pipeReader";
-  pipes.write = STDOUT;
-  pipes.read = pipe;
-  int32_t pidReader = sysCreateProcessWithPipeSwap(1, argv2, pipeReader, pipes);
 
-  sysWaitPid(pidWriter);
-  char eof = EOF;
-  sysWrite(pipe, &eof, 1);
-  sysWaitPid(pidReader);
-  printf("%s - %u: Destroying pipe...\n", argv[0], pid);
-  sysSleep(1000);
-  if (!sysDestroyPipe(pipe)) printf("%s - %u - Error destroying pipe: %d\n", argv[0], pid, pipe);
-
-  sysExit(SUCCESS);
-} */
 
 void commandBlock(int32_t argc, char* argv[argc]) {
   if (argc < 2) {
@@ -345,56 +350,3 @@ void commandUnBlock(int32_t argc, char* argv[argc]) {
   sysExit(SUCCESS);
 }
 
-// void commandCat() {
-//   signed char c;
-//   while ((int)(c = getChar()) != EOF) {
-//     if (printChar(c) < 0) sysExit(PROCESS_FAILURE);
-//   }
-//   sysExit(SUCCESS);
-// }
-
-/* void commandWC() {
-  signed char c;
-  int32_t words = 0;
-  int32_t lines = 0;
-  bool inWord = false;
-  bool lastReadNewLine = false;
-
-  while ((int)(c = getChar()) != EOF) {
-    lastReadNewLine = false;
-    if (c == ' ' || c == '\n') {
-      if (inWord) {
-        ++words;
-        inWord = false;
-      }
-      if (c == '\n') {
-        ++lines;
-        lastReadNewLine = true;
-      }
-    } else inWord = true;
-    if (printChar(c) < 0) sysExit(PROCESS_FAILURE);
-  }
-  if (inWord) ++words;
-  if (!lastReadNewLine) ++lines;
-
-  printf("\nWord count: %d\n", words);
-  printf("Line count: %d\n", lines);
-
-  sysExit(SUCCESS);
-} */
-
-/* int32_t charIsAVowel(char c) {
-  return (
-      c == 'a' || c == 'A' || c == 'e' || c == 'E' || c == 'i' || c == 'I' || c == 'o' || c == 'O' || c == 'u' ||
-      c == 'U'
-  );
-} */
-
-/* void commandFilter() {
-  signed char c;
-  while ((int)(c = getChar()) != EOF) {
-    if (!charIsAVowel(c)) printf("%c", c);
-  }
-  printf("\n");
-  sysExit(SUCCESS);
-} */

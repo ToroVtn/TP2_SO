@@ -56,10 +56,14 @@ int findSem(char *name) {
 
 int queue(int semId, const PCB* queuedProcess) {
     semaphore* sem = getAtArrayIdx(semArray, semId);
-    if (sem == NULL) return false;
+    if (sem == NULL) {
+        return false;
+    }
 
     PCBNodeSem* node = globalMalloc(sizeof(PCBNodeSem));
-    if (node == NULL) return false;
+    if (node == NULL) {
+        return false;
+    }
     node->procPCB = queuedProcess;
     node->next = NULL;
     if (sem->pcbNodeHead == NULL) {
@@ -75,7 +79,9 @@ int queue(int semId, const PCB* queuedProcess) {
 
 const PCB* dequeue(int semId) {
     semaphore* sem = getAtArrayIdx(semArray, semId);
-    if (sem == NULL || sem->pcbNodeHead == NULL) return NULL;
+    if (sem == NULL || sem->pcbNodeHead == NULL) {
+        return NULL;
+    }
     PCB* pcb = sem->pcbNodeHead->procPCB;
     PCBNodeSem* temp = sem->pcbNodeHead;
     sem->pcbNodeHead = sem->pcbNodeHead->next;
@@ -85,7 +91,7 @@ const PCB* dequeue(int semId) {
 
 int createSem(char* name, int initialValue) {
     if(findSem(name) >= 0) {
-        return ERROR; //El semáforo ya existe
+        return ERROR; 
     }
     return addSem(name, initialValue);
 }

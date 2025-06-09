@@ -13,7 +13,6 @@ typedef struct ModifierKeys {
   bool ctrlPressed : 1;
   bool altPressed : 1;
   bool capsLockActive : 1;
-  // bool altGrPressed: 1;
 } ModifierKeys;
 
 typedef struct KeyStruct {

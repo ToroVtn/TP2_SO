@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#define BUDDY // comment this to change to the other mm implementation
+#define BUDDY // comment this to change to the other mm implementation (heap4)
 
 #include <stdint.h>
 #include <stdio.h>
@@ -20,8 +20,8 @@ void listInit(void* heapStart, Block* freeList[]);
 #else
 
 typedef struct Block{
-    struct Block * nextFreeBlock; /**< The next free block in the list. */
-    size_t blockSize;                     /**< The size of the free block. */
+    struct Block * nextFreeBlock;
+    size_t blockSize;                    
 } Block;
 
 void listInit(void* heapStart, Block* listStart, Block** listEnd, size_t* freeBytes);

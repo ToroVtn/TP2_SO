@@ -5,7 +5,6 @@ GLOBAL getCurrentHours
 
 section .text
 
-; fuente: (https://stanislavs.org/helppc/cmos_ram.html)
 
 setBinaryClockFormat:
 	push rbp
