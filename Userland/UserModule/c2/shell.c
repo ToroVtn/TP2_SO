@@ -62,7 +62,7 @@ int32_t shell() {
   addCommand("block", "Blocks the specified process", commandBlock);
   addCommand("unblock", "Unblocks the specified process", commandUnBlock);
   addCommand("testPipe", "Test the pipe system with a writer and a reader process.", commandTestPipes);
-  addCommand("phylo","Starts the philosophers problem.\n""    `e` to Exit, `a` to Add philosopher, `r` to Remove philosopher",commandPhylo);
+  addCommand("phylo","Starts the philosophers problem.\n""    `E` to Exit, `A` to Add philosopher, `R` to Remove philosopher",commandPhylo);
   addCommand("testPriority", "Test the process priority system, 0 for small wait, 1 for long wait.", commandTestPriority);
   addCommand("testMM", "Test Memory manager.", commandTestMM);
   addCommand("memState", "Get the memory state of the current process or a specified pid.", commandGetMemoryState);
@@ -70,7 +70,8 @@ int32_t shell() {
   addCommand("testProcesses", "Checks the process creation, blocking,\n" "unblocking and destruction", commandTestProcesses);
   addCommand("cat", "Read from stdin and output to stdout", commandCat);
   addCommand("wc", "Word counts  from stdin", commandWC);
-  addCommand("filter", "Return given array filtering voewls", commandFilter);
+  addCommand("filter", "Return given array filtering vowels", commandFilter);
+  addCommand("memstate", "[pid] No arguments shows whole heap stats,\nor shows the process heap stats by the given pid", commandGetMemoryState);
 
   char* argv[1] = {"help"};
   sysWaitPid(sysCreateProcess(1, argv, commandHelp));
