@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <syscalls.h>
 #include <testingUtilities.h>
+#include <stdlib.h>
 
 enum State { RUNNING, BLOCKED, KILLED };
 
@@ -60,8 +61,8 @@ void commandTestProcesses(int32_t argc, char* argv[]) {
     while (alive > 0) {
 
       for (rq = 0; rq < max_processes; rq++) {
-        action = GetUniform(100) % 2; //POR ALGUNA RAZON QUE DESCONOZCO DEVUELVE SIEMPRE LO MISMO (0)
-
+        //action = GetUniform(100) % 2; //POR ALGUNA RAZON QUE DESCONOZCO DEVUELVE SIEMPRE LO MISMO (0)
+        action = randBetween(0, 1); 
         switch (action) {
         case 0:
           if (p_rqs[rq].state == RUNNING || p_rqs[rq].state == BLOCKED) {
