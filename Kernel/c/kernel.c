@@ -7,6 +7,7 @@
 #include <videoDriver.h>
 #include <scheduler.h>
 #include <semaphores.h>
+#include <pipes.h>
 
 
 extern uint8_t kernelBss;
@@ -50,7 +51,7 @@ int main() {
   setFontGridValues();
   createPCBList();
   initSemArray();
-
+  initPipes();
   initUserModule();
 
 

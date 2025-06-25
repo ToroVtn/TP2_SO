@@ -11,8 +11,8 @@
 
 #define MAX_PADDING_DIGITS 2
 
-#define STDOUT 0
-#define STDIN 1
+#define STDIN 0
+#define STDOUT 1
 #define STDERR 2
 
 #define TO_LOWER(c) ((c >= 'A' && c <= 'Z') ? (c + 'a' - 'A') : c)
