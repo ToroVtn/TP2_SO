@@ -22,17 +22,21 @@ int32_t opStatus;
 
 int32_t opMutex;
 void allWait() {
-  // Just acquire a single mutex for operations instead of blocking all philosophers
   sysWaitSem(opMutex);
 }
 
 void freeAll() {
-  // Just release the operation mutex
   sysPostSem(opMutex);
 }
 
 int32_t rightFork(int32_t i) {
-  return (i + 1) % phylosEating;
+  if (i < QUANTITY_PHYLO - 1) {
+    return i + 1;
+  } else if (i == QUANTITY_PHYLO - 1) {
+    return 0; 
+  } else {
+    return (i + 1) % phylosEating;
+  }
 }
 
 void allWaitForInit(){
@@ -96,7 +100,6 @@ void phyloLoop(uint64_t argc, char* argv[argc]) {
 int32_t addPhylo(int32_t pos) {
   if (pos < PHYLO_MIN || pos >= PHYLO_MAX) return -2;
   
-  // Use the operation mutex
   sysWaitSem(opMutex);
   
   // Create the fork semaphore
@@ -115,7 +118,6 @@ int32_t addPhylo(int32_t pos) {
   phylo[pos].pid = sysCreateProcess(sizeof(argvPhylo) / sizeof(argvPhylo[0]), argvPhylo, phyloLoop);
   phylosEating++;
   
-  // Release the operation mutex
   sysPostSem(opMutex);
   
   printf("Philosopher number %d has joined the table\n", pos + 1);
@@ -123,18 +125,34 @@ int32_t addPhylo(int32_t pos) {
 }
 int32_t removePhylo(int32_t pos) {
   if (pos < PHYLO_MIN || pos >= phylosEating) return -2;
+  
   allWait();
-  if (!sysKill(phylo[pos].pid)){
-    printf("Error killing Philosopher %d's process.\n", pos);
+  
+  // Kill the process and destroy semaphore
+  if (!sysKill(phylo[pos].pid)) {
+    printf("Error killing Philosopher %d's process.\n", pos + 1);
     freeAll();
     return -1;
   }
+  
   if (!sysDestroySemaphore(phylo[pos].forkAtIndex)) {
-    printf("Error destroying Philosopher %d's semaphore.\n", pos);
+    printf("Error destroying Philosopher %d's semaphore.\n", pos + 1);
     freeAll();
     return -1;
   }
-  phylosEating = pos;
+  
+  phylosEating--;
+  
+  if (pos < phylosEating) {
+    for (int i = pos; i < phylosEating; i++) {
+      phylo[i] = phylo[i + 1];
+    }
+  }
+  
+  phylo[phylosEating].state = NOTHING;
+  phylo[phylosEating].forkAtIndex = -1;
+  phylo[phylosEating].pid = 0;
+  
   printf("Philosopher number %d has left the table\n", pos + 1);
   freeAll();
   return 0;
@@ -159,10 +177,8 @@ void endPhylos() {
   printf("All philosophers have left the table.\n");
 }
 
-// FIRST: Remove allWaitForInit completely
-// void allWaitForInit() { ... } <- DELETE THIS FUNCTION
 
-// SECOND: Update commandPhylo to fix deadlocks and CPU usage
+
 void commandPhylo(int32_t argc, char* argv[argc]) {
   if (argc != 1) {
     sysExit(TOO_MANY_ARGUMENTS);
@@ -213,7 +229,6 @@ void commandPhylo(int32_t argc, char* argv[argc]) {
     printf("Philosopher number %d has joined the table\n", i + 1);
   }
   
-  // 3. Improve the keyboard handling loop
   printf("\nCommands:\n");
   printf("  a - Add philosopher\n");
   printf("  r - Remove philosopher\n");
@@ -222,12 +237,10 @@ void commandPhylo(int32_t argc, char* argv[argc]) {
   KeyStruct key;
   while (1) {
     
-    // Poll for keyboard input
     if (!getKey(&key)) {
-      continue; // No key pressed, try again
+      continue; 
     }
     
-    // Process key immediately
     switch(key.character) {
       case 'a':
       case 'A':
