@@ -7,7 +7,7 @@
 #include <videoDriver.h>
 #include <scheduler.h>
 #include <semaphores.h>
-
+#include <pipes.h>
 
 extern uint8_t kernelBss;
 extern uint8_t endOfKernelBinary;
@@ -52,7 +52,6 @@ int main() {
   initSemArray();
   initPipes();
   initUserModule();
-
 
   return 0;
 }

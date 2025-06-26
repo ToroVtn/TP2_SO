@@ -82,16 +82,22 @@ int64_t readFromPipe(int32_t pipeId, char* buf, int32_t len) {
   Pipe* p = fetchPipe(pipeId);
   if (p == NULL) return -1;
   int64_t pos = 0;
-  bool reachedEnd = false;
+  
   do {
     waitSemaphore(p->written);
     waitSemaphore(p->mutex);
-    buf[pos++] = p->buffer[p->consumingIndex];
+    buf[pos] = p->buffer[p->consumingIndex];
     p->consumingIndex = (p->consumingIndex + 1) % BUFFER_SIZE;
-    if (p->consumingIndex == p->producingIndex) reachedEnd = true;
     postSemaphore(p->mutex);
     postSemaphore(p->empty);
-  } while (pos < len && !reachedEnd);
+    
+    // Only stop if we encounter EOF, not if buffer becomes empty
+    if (buf[pos] == EOF) {
+      pos++; // Include EOF in returned data
+      break;
+    }
+    pos++;
+  } while (pos < len);
 
   return pos;
 }

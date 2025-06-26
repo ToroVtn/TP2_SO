@@ -279,20 +279,33 @@ void commandNice(int32_t argc, char* argv[argc]) {
   sysSetPriority(strToInt(argv[1]), newPriority);
   sysExit(SUCCESS);
 }
-
-void pipeWriter(int32_t argc, char* argv[argc]) {
+//NO FUNCA
+/* void pipeWriter(int32_t argc, char* argv[argc]) {
   static char* words[] = {"0000000", "1111111", "2222222", "3333333", "4444444",
                           "5555555", "6666666", "7777777", "8888888", "9999999"};
-  static int32_t wordsCount = sizeof(words) / sizeof(*words);
+  static int32_t wordsCount = sizeof(words) / sizeof(words);
   static int32_t wordLen = 7;
-  int32_t bufLen = 5 * wordsCount * wordLen;
+  int32_t bufLen = 5 wordsCount * wordLen;
   char buf[bufLen];
   for (int32_t i = 0, j = 0; i < bufLen; ++j) {
     i += strcpy(buf + i, words[j % wordsCount]);
   }
   printf("%s", buf);
   sysExit(SUCCESS);
+} */
+
+void pipeWriter(int32_t argc, char* argv[argc]) {
+  Pipe pipes = sysFetchPipes();
+  char* pattern = "0000000111111122222223333333444444455555556666666777777788888889999999";
+  int patternLen = strlen(pattern);
+  
+  for (int i = 0; i < 5; i++) {
+    printf("%s", pattern);
+  }
+    
+  sysExit(SUCCESS);
 }
+
 void pipeReader(int32_t argc, char* argv[argc]) {
   char buf[200];
   int64_t i = 0, tot = 0;
@@ -306,7 +319,7 @@ void pipeReader(int32_t argc, char* argv[argc]) {
     }
     buf[i] = 0;
     tot += i;
-    printf("%s - %u - Current read: %li - Total read: %li\n", argv[0], pid, i, tot);
+    printf("%s - %u - Current read: %l - Total read: %l\n", argv[0], pid, i, tot);
     printf("%s\n", buf);
     sysSleep(500);
   } while ((int)buf[i - 1] != EOF);
